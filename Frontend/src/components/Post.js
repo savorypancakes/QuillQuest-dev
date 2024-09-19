@@ -1,5 +1,5 @@
 import React from 'react';
-import './css/Post.css';
+import '../assets/css/components/Post.css';
 
 const Post = ({ username, time, title, image, prompt, content, likes, comments }) => {
   return (

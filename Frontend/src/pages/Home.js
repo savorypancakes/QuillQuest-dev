@@ -1,7 +1,7 @@
 import React from 'react';
-import Navbar from './Navbar';
-import Post from './Post';
-import './css/Home.css';
+import Navbar from '../components/Navbar';
+import Post from '../components/Post';
+import '../assets/css/pages/Home.css';
 
 const Home = () => {
   const posts = [

@@ -4,8 +4,8 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import HomeIcon from '@mui/icons-material/Home';
 import EditIcon from '@mui/icons-material/Edit';
-import './css/Navbar.css';
-import logo from '../assets/logos/logo-3.png';
+import '../assets/css/components/Navbar.css';
+import logo from '../assets/images/logo-3.png';
 
 const Navbar = () => {
   return (
