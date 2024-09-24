@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import './css/Register.css';
+import '../assets/css/pages/Register.css';
 
 const Register = () => {
   return (
