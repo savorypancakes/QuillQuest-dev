@@ -18,7 +18,7 @@ const Navbar = () => {
       <div className="navbar-center">
         <ul className="nav-links">
           <li><Link to="/home"><HomeIcon /> Home</Link></li>
-          <li><Link to="/create-post"><EditIcon /> Create Post</Link></li>
+          <li><Link to="/createpost"><EditIcon /> Create Post</Link></li>
         </ul>
       </div>
 
