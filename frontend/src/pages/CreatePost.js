@@ -1,15 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
 import TextEditor from '../components/TextEditor';
 import '../assets/css/index.css'; // Ensure you have Tailwind's CSS imported
 
 const CreatePost = () => {
-  // Managing selected radio button option using useState
-  const [selectedOption, setSelectedOption] = useState("option1");
-
-  const handleChange = (event) => {
-    setSelectedOption(event.target.value);
-  };
-
   return (
     <div className="flex h-screen w-full">
       {/* //division 1: return to post feed page */}
@@ -36,14 +29,19 @@ const CreatePost = () => {
         </div>
 
         <div className='flex'>
-          <div class="w-6/12 inline-flex rounded-md shadow-sm" role="group">
-            <button type="button" class="px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-gray-900 rounded-s-lg focus:z-10 focus:ring-2 focus:ring-gray-500 focus:bg-gray-900 focus:text-white dark:border-white dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:bg-gray-700">
+          <div className="w-6/12 inline-flex border-4 border-black-600 rounded-md" role="group">
+            <button type="button" className="text-sm font-medium 
+              bg-purple-600 text-white border-4 border-black">
               Select Post Type
             </button>
-            <button type="button" class="px-4 py-2 text-sm font-medium text-gray-900 bg-transparent border-t border-b border-gray-900 hover:bg-gray-900 hover:text-white focus:z-10 focus:ring-2 focus:ring-gray-500 focus:bg-gray-900 focus:text-white dark:border-white dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:bg-gray-700">
+            <button type="button" className="text-sm font-medium 
+              bg-white text-purple-600 border-4 
+              hover:bg-purple-400 hover:text-white">
               Discussion
             </button>
-            <button type="button" class="px-4 py-2 text-sm font-medium text-gray-900 bg-transparent border border-gray-900 rounded-e-lg hover:bg-gray-900 hover:text-white focus:z-10 focus:ring-2 focus:ring-gray-500 focus:bg-gray-900 focus:text-white dark:border-white dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:bg-gray-700">
+            <button type="button" className="text-sm font-medium 
+              bg-white text-purple-600 border-4 border-purple-600 rounded-md  
+              hover:bg-purple-400 hover:text-white">
               Advice and Feedback
             </button>
           </div>
