@@ -1,13 +1,33 @@
-import React, { useState } from 'react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css'; // import styles
+// src/Tiptap.tsx
+import { useEditor, EditorContent } from '@tiptap/react'
+import Document from '@tiptap/extension-document'
+import Paragraph from '@tiptap/extension-paragraph'
+import Text from '@tiptap/extension-text'
+import Placeholder from '@tiptap/extension-placeholder' // Import the placeholder extension
+import '../assets/css/components/TextEditor.css' // Assuming you have styles in this file
 
 const TextEditor = () => {
-  const [value, setValue] = useState('');
-  
-  return (
-    <ReactQuill value={value} onChange={setValue} />
-  );
-};
+  const editor = useEditor({
+    extensions: [
+      Document,
+      Paragraph,
+      Text,
+      Placeholder.configure({
+        placeholder: 'Untitled document', // Set your placeholder text here
+      }),
+    ],
+    content: '', // Start with empty content
+  })
 
-export default TextEditor;
+  if (!editor) {
+    return null // Render nothing if editor is not ready
+  }
+
+  return (
+    <>
+      <EditorContent editor={editor} />
+    </>
+  )
+}
+
+export default TextEditor
