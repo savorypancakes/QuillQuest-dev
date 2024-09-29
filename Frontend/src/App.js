@@ -18,8 +18,6 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path='/profile' element={<Profile />}/>
-          <Route path='/createpost' element={<CreatePost />}/>
-
         </Routes>
       </div>
     </Router>
