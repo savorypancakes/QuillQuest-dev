@@ -1,108 +1,87 @@
+/* Navbar Container */
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 5px 20px;
   background-color: white;
-  border-radius: 25px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 8px 20px;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
   position: fixed;
-  top: -5px;
-  left: 0px;
-  right: 0px;
+  top: 0;
+  left: 0;
+  width: 100%;
   z-index: 1000;
 }
 
+/* Left section (Logo and Text) */
 .navbar-left {
   display: flex;
   align-items: center;
 }
 
+.navbar-left a {
+  display: flex;
+  align-items: center;
+  text-decoration: none; /* Remove the underline */
+}
+
 .logo-image {
-  height: 50px; 
-  margin-right: 10px;
+  width: 50px;
+  height: auto;
+  margin-right: 8px;
 }
 
 .logo-text {
-  font-size: 1.5rem;
-  font-family: 'McLaren', cursive;
-  color: #9500F0;
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: #ab57ff;
+  white-space: nowrap; /* Prevent text from wrapping */
 }
 
+/* Center section (Home and Create Post buttons) */
 .navbar-center {
   display: flex;
-  align-items: center;
-}
-
-.nav-links {
-  display: flex;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  gap: 10px;
-}
-
-.nav-links li {
-  display: flex;
-  align-items: center;
-  background-color: #d6d6d6;
-  border-radius: 25px;
-  padding: 5px 10px;
-  transition: background-color linear, color linear;
-}
-
-.nav-links li a {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  color: #000;
-  font-weight: 500;
-}
-
-.nav-links li:hover {
-  background-color: #9500F0;
-}
-
-.nav-links li:hover a {
-  color: #fff;
-  background-color: #9500F0;
-  border-radius: 25px;
-}
-
-.navbar-right {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  width: 10%;
+  gap: 15px;
 }
 
 .icon-button {
-  background-color: transparent;
-  color: #000;
-  border: none;
-  cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0;
-  margin-right: 10px;
-  height: 40px;
-  width: 40px;
+  background-color: #f0f0f0;
+  padding: 5px 12px;
+  border-radius: 20px;
+  text-decoration: none;
+  color: #333;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+}
+
+.icon-button:hover {
+  background-color: #e0e0e0;
+}
+
+.nav-icon {
+  margin-right: 5px;
+  font-size: 1.3rem;
+}
+
+/* Right section (Notifications and User Profile) */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
 .user-icon {
-  background-color: #9500F0; /* สีพื้นหลัง */
-  color: white; /* สีของตัวอักษร */
-  font-weight: bold;
-  border-radius: 50%; /* ทำให้เป็นวงกลม */
-  width: 40px; /* ความกว้าง */
-  height: 40px; /* ความสูง */
+  background-color: #ab57ff;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  font-size: 20px; /* ขนาดของตัวอักษร */
-  box-sizing: border-box; /* ทำให้ padding ไม่ส่งผลต่อขนาด */
-  margin-left: 10px; /* ระยะห่างระหว่าง user-icon และไอคอนอื่นๆ */
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
 }

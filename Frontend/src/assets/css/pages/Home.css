@@ -1,11 +1,42 @@
 .home-container {
-    background-color: #f8f8f8;
-    padding: 80px 20px 20px; /* Padding adjusted to avoid overlap with fixed navbar */
-}
-
-.post-feed {
     display: flex;
-    flex-direction: column;
-    gap: 20px;
-    align-items: center; /* Center align posts */
-}
+    justify-content: space-between;
+    padding: 80px;
+  }
+  
+  .prompt-section {
+    width: 25%;
+  }
+  
+  .post-feed {
+    width: 70%;
+    margin-left: 20px;
+  }
+  
+/* For the prompt cards */
+  .prompt-section {
+    width: 25%;
+    margin-right: 20px;
+  }
+  
+  .post-feed {
+    width: 70%;
+  }
+  
+  .prompt-card {
+    background-color: #fff;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .prompt-card h3 {
+    font-size: 18px;
+    margin-bottom: 5px;
+  }
+  
+  .prompt-card p {
+    font-size: 16px;
+    margin-bottom: 10px;
+  }  

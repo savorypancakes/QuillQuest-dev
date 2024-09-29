@@ -13,7 +13,7 @@ const Home = () => {
       content: 'The bald eagle, with its majestic presence and powerful flight, has long stood as a symbol of the United States...',
       likes: '1.4K',
       comments: '1.4K',
-      imageUrl: 'https://via.placeholder.com/600x400' // Replace with actual image URLs
+      imageUrl: '/path/to/eagle-image.jpg' // Replace with actual image URLs
     },
     {
       username: 'QuillBot',
@@ -23,13 +23,30 @@ const Home = () => {
       content: 'The bald eagle, with its majestic presence and powerful flight, has long stood as a symbol of the United States...',
       likes: '1.4K',
       comments: '1.4K',
-      imageUrl: 'https://via.placeholder.com/600x400' // Replace with actual image URLs
+      imageUrl: '/path/to/another-eagle-image.jpg' // Replace with actual image URLs
     },
   ];
 
   return (
     <div className="home-container">
       <Navbar />
+      <div className="prompt-section">
+        <div className="prompt-card">
+          <h3>Prompt of the Day</h3>
+          <p>Is the bald eagle the best symbol to represent the US?</p>
+          <span>7 days remaining</span>
+        </div>
+        <div className="prompt-card">
+          <h3>Yesterday's Prompt</h3>
+          <p>Should plastic bags be banned worldwide?</p>
+          <span>6 days remaining</span>
+        </div>
+        <div className="prompt-card">
+          <h3>2 days ago</h3>
+          <p>Is nuclear energy a viable solution to the world's energy problems?</p>
+          <span>5 days remaining</span>
+        </div>
+      </div>
       <div className="post-feed">
         {posts.map((post, index) => (
           <Post 

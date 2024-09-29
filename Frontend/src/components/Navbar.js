@@ -1,35 +1,42 @@
 import React from 'react';
 import { Link } from 'react-router-dom';  
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
-import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import HomeIcon from '@mui/icons-material/Home';
 import EditIcon from '@mui/icons-material/Edit';
-import '../assets/css/components/Navbar.css';
-import logo from '../assets/images/logo-3.png';
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import '../assets/css/components/Navbar.css';  // Make sure the CSS path is correct
+import logo from '../assets/images/logo-3.png'; // Ensure the logo path is correct
 
 const Navbar = () => {
   return (
     <nav className="navbar">
+      {/* Left section with logo and text */}
       <div className="navbar-left">
-      <Link to="/login"><img src={logo} alt="Logo" className="logo-image" /></Link>
-        <div className="logo-text">Quillquest</div>
+        <Link to="/">
+          <img src={logo} alt="Logo" className="logo-image" />
+          <div className="logo-text">QuillQuest</div> 
+        </Link>
       </div>
 
+      {/* Center section with Home and Create Post */}
       <div className="navbar-center">
-        <ul className="nav-links">
-          <li><Link to="/home"><HomeIcon /> Home</Link></li>
-          <li><Link to="/createpost"><EditIcon /> Create Post</Link></li>
-        </ul>
+        <Link to="/home" className="icon-button">
+          <HomeIcon className="nav-icon" />
+          Home
+        </Link>
+        <Link to="/createpost" className="icon-button">
+          <EditIcon className="nav-icon" />
+          Create Post
+        </Link>
       </div>
 
+      {/* Right section with notifications and user profile */}
       <div className="navbar-right">
-        <button className="icon-button" aria-label="Chat">
-          <ChatBubbleOutlineIcon />
-        </button>
         <button className="icon-button" aria-label="Notifications">
           <NotificationsNoneIcon />
         </button>
-        <Link to="/login"><div className="user-icon">U</div></Link>
+        <Link to="/profile">
+          <div className="user-icon">U</div>
+        </Link>
       </div>
     </nav>
   );

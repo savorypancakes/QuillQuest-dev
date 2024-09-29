@@ -25,6 +25,8 @@ const Post = ({ username, time, title, image, prompt, content, likes, comments }
       <div className="post-content">
         <div className="post-prompt">
           <span className="prompt-tag">{prompt}</span>
+          <span className="discussion-tag">Discussion</span> 
+          <span className="remaining-tag">7 days remaining</span> 
         </div>
         <p>{content}</p>
       </div>

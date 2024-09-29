@@ -1,19 +1,22 @@
+/* Main Post Container */
 .post {
   background-color: white;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 20px;
-  width: 90%; /* Adjusted width to look similar to the second image */
+  width: 100%; /* Adjusted for full width */
   max-width: 800px; /* Limit max width */
-  margin-bottom: 20px;
+  margin: 0 auto 20px; /* Center post and add bottom margin */
 }
 
+/* Post Header */
 .post-header {
   display: flex;
   align-items: center;
   margin-bottom: 15px;
 }
 
+/* User Information */
 .user-info {
   display: flex;
   align-items: center;
@@ -46,12 +49,15 @@
   font-size: 0.85rem;
 }
 
+/* Post Title */
 .post-title {
   margin: 0 0 15px;
   font-size: 1.5rem;
+  font-weight: bold;
   text-align: left; /* Ensure left alignment */
 }
 
+/* Post Image */
 .post-image img {
   width: 100%;
   height: auto;
@@ -59,21 +65,44 @@
   margin-bottom: 15px;
 }
 
+/* Post Content */
 .post-content {
   font-size: 1rem;
   line-height: 1.5;
   color: #333;
 }
 
-.post-prompt .prompt-tag {
-  background-color: #ececec;
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-size: 0.9rem;
+/* Tags Section (Prompt, Discussion, Days Remaining) */
+.post-prompt {
+  display: flex;
+  align-items: center;
   margin-bottom: 10px;
-  display: inline-block;
 }
 
+.prompt-tag,
+.discussion-tag,
+.remaining-tag {
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 12px;
+  margin-right: 5px;
+  color: #fff;
+}
+
+/* Different Colors for Each Tag */
+.prompt-tag {
+  background-color: #ab57ff; /* Example color for Prompt */
+}
+
+.discussion-tag {
+  background-color: #00c853; /* Example color for Discussion */
+}
+
+.remaining-tag {
+  background-color: #ffab00; /* Example color for Days Remaining */
+}
+
+/* Post Footer (Likes and Comments Buttons) */
 .post-footer {
   display: flex;
   justify-content: space-between;
