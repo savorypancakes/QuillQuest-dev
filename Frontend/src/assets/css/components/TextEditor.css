@@ -1,0 +1,19 @@
+/* Add this to your CSS file */
+.ProseMirror {
+    text-align: left; /* Ensures text is left-aligned */
+    border: none; /* Removes any border when focused */
+}
+  
+.ProseMirror:focus {
+outline: none; /* Removes the default focus outline */
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    color: #adb5bd;
+    pointer-events: none;
+    height: 0;
+  }
+  
+  

@@ -1,37 +1,37 @@
 import React from 'react';
 import '../assets/css/components/Post.css';
 
-const Post = ({ username, time, title, image, prompt, content, likes, comments }) => {
+const Post = ({ post }) => {
   return (
     <div className="post">
       <div className="post-header">
         <div className="user-info">
-          <div className="user-icon">{username.charAt(0).toUpperCase()}</div>
+          <div className="user-icon">{post.author.username.charAt(0).toUpperCase()}</div>
           <div className="user-details">
-            <span className="username">{username}</span>
-            <span className="time">{time}</span>
+            <span className="username">{post.author.username}</span>
+            <span className="time">{new Date(post.createdAt).toLocaleString()}</span>
           </div>
         </div>
       </div>
 
-      <h2 className="post-title">{title}</h2>
+      <h2 className="post-title">{post.title}</h2>
 
-      {image && (
-        <div className="post-image">
-          <img src={image} alt={title} />
-        </div>
-      )}
+      
 
       <div className="post-content">
-        <div className="post-prompt">
-          <span className="prompt-tag">{prompt}</span>
-        </div>
-        <p>{content}</p>
+      <div className="post-prompt">
+            {post.tags.map((tag, index) => (
+              <span key={index} className="tag">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        <p>{post.content}</p>
       </div>
 
       <div className="post-footer">
-        <button className="like-button">👍 {likes}</button>
-        <button className="comment-button">💬 {comments}</button>
+        <button className="like-button">👍 </button>
+        <button className="comment-button">💬 </button>
       </div>
     </div>
   );

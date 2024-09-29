@@ -4,7 +4,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
+import CreatePost from './pages/CreatePost';
 import './assets/css/App.css';
+
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path='/profile' element={<Profile />}/>
+          <Route path='/createpost' element={<CreatePost />}/>
+
         </Routes>
       </div>
     </Router>
