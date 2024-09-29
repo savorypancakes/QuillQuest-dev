@@ -1,10 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import TextEditor from '../components/TextEditor';
-import '../assets/css/index.css'; // Ensure you have Tailwind's CSS imported
+import '../assets/css/index.css';
 
 const CreatePost = () => {
-  const [title, setTitle] = useState(''); // State for title input
-  const [editorContent, setEditorContent] = useState(''); // State for text editor content
+  const [title, setTitle] = useState('');
+  const [editorContent, setEditorContent] = useState('');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const editorContainerRef = useRef(null);
+  const [editorWidth, setEditorWidth] = useState('100%');
+
+  useEffect(() => {
+    const updateEditorWidth = () => {
+      if (editorContainerRef.current) {
+        setEditorWidth(`${editorContainerRef.current.offsetWidth}px`);
+      }
+    };
+
+    updateEditorWidth();
+    window.addEventListener('resize', updateEditorWidth);
+
+    return () => window.removeEventListener('resize', updateEditorWidth);
+  }, []);
 
   const handleOutlineInsertion = async () => {
     try {
@@ -13,19 +29,21 @@ const CreatePost = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt: title }), // Use the title as prompt
+        body: JSON.stringify({ prompt: title }),
       });
       const data = await response.json();
-      // Append the LLM output to the current editor content
-      setEditorContent((prevContent) => `${prevContent}\n${data.output}`); // Adjust according to your API response structure
+      setEditorContent((prevContent) => `${prevContent}\n${data.output}`);
     } catch (error) {
       console.error('Error fetching outline:', error);
     }
   };
 
+  const toggleDropdown = () => {
+    setDropdownOpen(!dropdownOpen);
+  };
+
   return (
     <div className="flex w-full h-screen">
-      {/* Other components */}
       <div className="flex flex-col w-full">
         {/* Header Div */}
         <div className="flex items-center h-12 p-2 bg-gray-300 text-center border-b border-gray-400">
@@ -40,8 +58,8 @@ const CreatePost = () => {
           <div className="w-9/12 flex flex-col flex-grow text-left ml-4 mt-6">
             <input
               type="text"
-              value={title} // Bind the title input to state
-              onChange={(e) => setTitle(e.target.value)} // Update title state on change
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               className="w-full border-0 shadow-none bg-white placeholder-gray-700 font-bold py-1 px-3 focus:outline-none focus:bg-gray-100 hover:bg-gray-100"
               id="title"
               placeholder="Untitled document"
@@ -55,9 +73,16 @@ const CreatePost = () => {
         </div>
 
         {/* Main content area */}
-        <div className="flex w-full flex-grow overflow-y-auto">
-          <div className="flex-grow p-4">
-            <TextEditor content={editorContent} /> {/* Pass the editorContent as prop */}
+        <div className="flex w-full flex-grow overflow-hidden">
+          <div ref={editorContainerRef} className="flex-grow overflow-y-auto overflow-x-hidden p-4">
+            <div style={{ width: editorWidth, maxWidth: '100%' }}>
+              <TextEditor 
+                content={editorContent} 
+                className="overflow-x-hidden"
+                onUpdate={(newContent) => setEditorContent(newContent)}
+                editorStyles={{ width: '100%', maxWidth: '100%', overflowX: 'hidden' }}
+              />
+            </div>
           </div>
         </div>
 
@@ -75,15 +100,21 @@ const CreatePost = () => {
                 Advice and Feedback
               </button>
             </div>
-            <div className='flex-grow text-right'> 
-              <button id="dropdownHoverButton" data-dropdown-toggle="dropdownHover" data-dropdown-trigger="hover" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center" type="button">Dropdown hover
+            <div className='flex-grow text-right relative'> 
+              <button 
+                onClick={toggleDropdown}
+                className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center" 
+                type="button"
+              >
+                Dropdown hover
                 <svg className="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
                   <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 4 4 4-4"/>
                 </svg>
               </button>
 
               {/* Dropdown menu */}
-              <div id="dropdownHover" className="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44">
+              {dropdownOpen && (
+                <div className="absolute right-0 bottom-full mb-2 z-10 bg-white divide-y divide-gray-100 rounded-lg shadow w-44">
                   <ul className="py-2 text-sm text-gray-700" aria-labelledby="dropdownHoverButton">
                     <li>
                       <a href="#" className="block px-4 py-2 hover:bg-gray-100">Dashboard</a>
@@ -98,7 +129,8 @@ const CreatePost = () => {
                       <a href="#" className="block px-4 py-2 hover:bg-gray-100">Sign out</a>
                     </li>
                   </ul>
-              </div>
+                </div>
+              )}
             </div>
             <div className='flex-grow text-right'> 
               <button 
@@ -113,14 +145,14 @@ const CreatePost = () => {
       </div>
 
       {/* Right Side Div */}
-      <div className="w-2/12 border-l border-gray-400 p-4">
+      <div className="w-2/12 min-w-[200px] border-l border-gray-400 p-4 overflow-y-auto">
         <div className="flex flex-col space-y-4">
           <div className="flex items-center justify-between">
             <p>Outline Insertion</p>
             <button 
               type="button" 
               className="btn hover:bg-purple-400 w-auto text-sm px-2 py-1"
-              onClick={handleOutlineInsertion} // Call the handler on button click
+              onClick={handleOutlineInsertion}
             >
               Insert
             </button>
