@@ -1,5 +1,4 @@
-// src/components/TextEditor.jsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react'
 import Document from '@tiptap/extension-document'
 import Paragraph from '@tiptap/extension-paragraph'
@@ -7,7 +6,9 @@ import Text from '@tiptap/extension-text'
 import Placeholder from '@tiptap/extension-placeholder'
 import '../assets/css/components/TextEditor.css'
 
-const TextEditor = ({ content, className = '', onUpdate, editorStyles }) => {
+const TextEditor = ({ translationResult, className = '', editorStyles }) => {
+  const [isEmpty, setIsEmpty] = useState(true);
+
   const editor = useEditor({
     extensions: [
       Document,
@@ -17,11 +18,17 @@ const TextEditor = ({ content, className = '', onUpdate, editorStyles }) => {
         placeholder: 'Untitled document',
       }),
     ],
-    content: content || '',
+    content: '<p></p>',
     onUpdate: ({ editor }) => {
-      onUpdate && onUpdate(editor.getHTML());
+      setIsEmpty(editor.isEmpty);
     },
   })
+
+  useEffect(() => {
+    if (editor && translationResult && isEmpty) {
+      editor.commands.setContent(`${translationResult}`);
+    }
+  }, [translationResult, editor, isEmpty]);
 
   if (!editor) {
     return null;

@@ -1,11 +1,52 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import TextEditor from '../components/TextEditor';
 import '../assets/css/index.css';
+import { ChatGroq } from "@langchain/groq";
 
 const CreatePost = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [apiKeyError, setApiKeyError] = useState(false);
+  const [translationResult, setTranslationResult] = useState('');
   const editorContainerRef = useRef(null);
   const [editorWidth, setEditorWidth] = useState('100%');
+
+  const translateText = useCallback(async () => {
+    try {
+      const apiKey = process.env.REACT_APP_GROQ_API_KEY;
+      if (!apiKey) {
+        throw new Error("Groq API key not found");
+      }
+
+      const llm = new ChatGroq({
+        apiKey: apiKey,
+        model: "llama3-8b-8192",
+        temperature: 0,
+        maxTokens: undefined,
+        maxRetries: 2,
+      });
+
+      const aiMsg = await llm.invoke([
+        {
+          role: "system",
+          content:
+            "Generate a outline of an essay based on the user. Only generate an essay outline, no greetings. Ensure the outline only guides the user to think",
+        },
+        { role: "user", content: "I love programming." },
+      ]);
+      console.log("", aiMsg.content);
+
+      const processedResult = aiMsg.content.split('\n').map(line => `<p>${line}</p>`).join('');
+      setTranslationResult(processedResult);
+      setApiKeyError(false);
+    } catch (error) {
+      console.error("Translation error:", error);
+      if (error.message.includes("API key")) {
+        setApiKeyError(true);
+      } else {
+        setTranslationResult("Error: Translation failed");
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const updateEditorWidth = () => {
@@ -46,7 +87,10 @@ const CreatePost = () => {
             />
           </div>
           <div className="w-2/12">
-            <button type="button" className="w-auto px-4 py-1 text-sm bg-purple-600 bg-opacity-100 text-white hover:bg-opacity-80">
+            <button 
+              type="button" 
+              className="w-auto px-4 py-1 text-sm bg-purple-600 bg-opacity-100 text-white hover:bg-opacity-80"
+            >
               Writing Assistant
             </button>
           </div>
@@ -57,9 +101,15 @@ const CreatePost = () => {
           <div ref={editorContainerRef} className="flex-grow overflow-y-auto overflow-x-hidden p-4">
             <div style={{ width: editorWidth, maxWidth: '100%' }}>
               <TextEditor 
+                translationResult={translationResult}
                 className="overflow-x-hidden"
                 editorStyles={{ width: '100%', maxWidth: '100%', overflowX: 'hidden' }}
               />
+              {apiKeyError && (
+                <p className="text-red-500 mt-2">
+                  Error: Groq API key not found. Please set the REACT_APP_GROQ_API_KEY environment variable.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -128,7 +178,8 @@ const CreatePost = () => {
           <div className="flex items-center justify-between">
             <p>Outline Insertion</p>
             <button 
-              type="button" 
+              type="button"
+              onClick={translateText}
               className="btn hover:bg-purple-400 w-auto text-sm px-2 py-1"
             >
               Insert
