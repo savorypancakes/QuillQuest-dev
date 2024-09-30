@@ -7,7 +7,7 @@ import Text from '@tiptap/extension-text'
 import Placeholder from '@tiptap/extension-placeholder'
 import '../assets/css/components/TextEditor.css'
 
-const TextEditor = ({ content, className = '', onUpdate }) => {
+const TextEditor = ({ content, className = '', onUpdate, editorStyles }) => {
   const editor = useEditor({
     extensions: [
       Document,
@@ -28,7 +28,7 @@ const TextEditor = ({ content, className = '', onUpdate }) => {
   }
 
   return (
-    <div className={`text-editor-wrapper ${className}`}>
+    <div className={`text-editor-wrapper ${className}`} style={editorStyles}>
       <EditorContent editor={editor} />
     </div>
   )
