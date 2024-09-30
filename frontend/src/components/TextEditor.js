@@ -6,8 +6,8 @@ import Text from '@tiptap/extension-text'
 import Placeholder from '@tiptap/extension-placeholder'
 import '../assets/css/components/TextEditor.css'
 
-const TextEditor = ({ translationResult, className = '', editorStyles }) => {
-  const [isEmpty, setIsEmpty] = useState(true);
+const TextEditor = ({ initialContent, onContentChange, className = '', editorStyles }) => {
+  const [content, setContent] = useState(initialContent);
 
   const editor = useEditor({
     extensions: [
@@ -18,17 +18,20 @@ const TextEditor = ({ translationResult, className = '', editorStyles }) => {
         placeholder: 'Untitled document',
       }),
     ],
-    content: '<p></p>',
+    content: content,
     onUpdate: ({ editor }) => {
-      setIsEmpty(editor.isEmpty);
+      const newContent = editor.getHTML();
+      setContent(newContent);
+      onContentChange(newContent);
     },
   })
 
   useEffect(() => {
-    if (editor && translationResult && isEmpty) {
-      editor.commands.setContent(`${translationResult}`);
+    if (editor && initialContent !== '' && content === '') {
+      editor.commands.setContent(initialContent);
+      setContent(initialContent);
     }
-  }, [translationResult, editor, isEmpty]);
+  }, [editor, initialContent, content]);
 
   if (!editor) {
     return null;
