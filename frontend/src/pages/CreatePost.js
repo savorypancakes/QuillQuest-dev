@@ -3,8 +3,6 @@ import TextEditor from '../components/TextEditor';
 import '../assets/css/index.css';
 
 const CreatePost = () => {
-  const [title, setTitle] = useState('');
-  const [editorContent, setEditorContent] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const editorContainerRef = useRef(null);
   const [editorWidth, setEditorWidth] = useState('100%');
@@ -21,22 +19,6 @@ const CreatePost = () => {
 
     return () => window.removeEventListener('resize', updateEditorWidth);
   }, []);
-
-  const handleOutlineInsertion = async () => {
-    try {
-      const response = await fetch('YOUR_LLM_API_ENDPOINT', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt: title }),
-      });
-      const data = await response.json();
-      setEditorContent((prevContent) => `${prevContent}\n${data.output}`);
-    } catch (error) {
-      console.error('Error fetching outline:', error);
-    }
-  };
 
   const toggleDropdown = () => {
     setDropdownOpen(!dropdownOpen);
@@ -58,8 +40,6 @@ const CreatePost = () => {
           <div className="w-9/12 flex flex-col flex-grow text-left ml-4 mt-6">
             <input
               type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
               className="w-full border-0 shadow-none bg-white placeholder-gray-700 font-bold py-1 px-3 focus:outline-none focus:bg-gray-100 hover:bg-gray-100"
               id="title"
               placeholder="Untitled document"
@@ -77,9 +57,7 @@ const CreatePost = () => {
           <div ref={editorContainerRef} className="flex-grow overflow-y-auto overflow-x-hidden p-4">
             <div style={{ width: editorWidth, maxWidth: '100%' }}>
               <TextEditor 
-                content={editorContent} 
                 className="overflow-x-hidden"
-                onUpdate={(newContent) => setEditorContent(newContent)}
                 editorStyles={{ width: '100%', maxWidth: '100%', overflowX: 'hidden' }}
               />
             </div>
@@ -117,16 +95,16 @@ const CreatePost = () => {
                 <div className="absolute right-0 bottom-full mb-2 z-10 bg-white divide-y divide-gray-100 rounded-lg shadow w-44">
                   <ul className="py-2 text-sm text-gray-700" aria-labelledby="dropdownHoverButton">
                     <li>
-                      <a href="#" className="block px-4 py-2 hover:bg-gray-100">Dashboard</a>
+                      <button onClick={() => {}} className="block w-full text-left px-4 py-2 hover:bg-gray-100">Dashboard</button>
                     </li>
                     <li>
-                      <a href="#" className="block px-4 py-2 hover:bg-gray-100">Settings</a>
+                      <button onClick={() => {}} className="block w-full text-left px-4 py-2 hover:bg-gray-100">Settings</button>
                     </li>
                     <li>
-                      <a href="#" className="block px-4 py-2 hover:bg-gray-100">Earnings</a>
+                      <button onClick={() => {}} className="block w-full text-left px-4 py-2 hover:bg-gray-100">Earnings</button>
                     </li>
                     <li>
-                      <a href="#" className="block px-4 py-2 hover:bg-gray-100">Sign out</a>
+                      <button onClick={() => {}} className="block w-full text-left px-4 py-2 hover:bg-gray-100">Sign out</button>
                     </li>
                   </ul>
                 </div>
@@ -152,7 +130,6 @@ const CreatePost = () => {
             <button 
               type="button" 
               className="btn hover:bg-purple-400 w-auto text-sm px-2 py-1"
-              onClick={handleOutlineInsertion}
             >
               Insert
             </button>
