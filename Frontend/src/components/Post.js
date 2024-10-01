@@ -7,10 +7,10 @@ const Post = ({ post }) => {
       <div className="post-header">
         <div className="user-info">
           <div className="user-icon"></div>
-          {/* {post.author.username.charAt(0).toUpperCase()}  | In user icon frame*/}
+          {/* {post.author.username.charAt(0).toUpperCase()}  */}
           <div className="user-details">
-            {/* <span className="username">{post.author.username}</span>
-            <span className="time">{new Date(post.createdAt).toLocaleString()}</span> */}
+            {/* <span className="username">{post.author.username}</span> */}
+            <span className="time">{new Date(post.createdAt).toLocaleString()}</span>
           </div>
         </div>
       </div>

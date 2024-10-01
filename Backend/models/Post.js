@@ -18,16 +18,16 @@ const PostSchema = new mongoose.Schema({
     type: String,
     required: true
   }
-  // ,
+  ,
   // tags: [{
   //   type: String,
   //   lowercase: true,
   //   trim: true
   // }],
-  // createdAt: {
-  //   type: Date,
-  //   default: Date.now
-  // },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
   // replies: [{
   //   type: mongoose.Schema.Types.ObjectId,
   //   ref: 'Comment'
