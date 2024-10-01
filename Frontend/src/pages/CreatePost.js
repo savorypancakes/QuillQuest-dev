@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import TextEditor from '../components/TextEditor';
 import '../assets/css/index.css'; // Ensure you have Tailwind's CSS imported
+import { useNavigate } from 'react-router-dom';
 import api from "../services/api";
 
 const CreatePost = () => {
+  const navigate = useNavigate();
   const [title, setTitle] = useState(''); // State for title input
-  const [editorContent, setEditorContent] = useState(''); // State for text editor content
+  const [content, setContent] = useState(''); // State for text editor content
 
   const handleOutlineInsertion = async () => {
     try {
@@ -18,21 +20,25 @@ const CreatePost = () => {
       });
       const data = await response.json();
       // Append the LLM output to the current editor content
-      setEditorContent((prevContent) => `${prevContent}\n${data.output}`); // Adjust according to your API response structure
+      setContent((prevContent) => `${prevContent}\n${data.output}`); // Adjust according to your API response structure
     } catch (error) {
       console.error('Error fetching outline:', error);
     }
   };
 
-  const handleSubmit = async () =>{
+  const handlePost = async () => {
+
     try {
-      const response = await api.post('/post',{
-        editorContent
-      });
-    } catch (err){
+      console.log('Submitting post with content:', content);
+      console.log('Submitting post with title:', title);
+      const response = await api.post('/posts', { title, content });
+      console.log('Post created successfully:', response.data);
+      setContent('');
+      navigate('/home');
+    } catch (err) {
       console.error('Error creating post:', err);
     }
-  }
+  };
 
   return (
     <div className="flex w-full h-screen">
@@ -41,11 +47,11 @@ const CreatePost = () => {
         {/* Header Div */}
         <div className="flex items-center h-12 p-2 bg-gray-300 text-center border-b border-gray-400">
           <div className="w-1/12">
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="w-auto px-4 py-1 text-sm bg-purple-600 bg-opacity-100 text-white hover:bg-opacity-80"
             >
-              Primary
+              Home
             </button>
           </div>
           <div className="w-9/12 flex flex-col flex-grow text-left ml-4 mt-6">
@@ -68,7 +74,7 @@ const CreatePost = () => {
         {/* Main content area */}
         <div className="flex w-full flex-grow overflow-y-auto">
           <div className="flex-grow p-4">
-            <TextEditor content={editorContent} /> {/* Pass the editorContent as prop */}
+            <TextEditor setContent={content} />
           </div>
         </div>
 
@@ -86,35 +92,37 @@ const CreatePost = () => {
                 Advice and Feedback
               </button>
             </div>
-            <div className='flex-grow text-right'> 
-              <button id="dropdownHoverButton" data-dropdown-toggle="dropdownHover" data-dropdown-trigger="hover" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center" type="button">Dropdown hover
+            <div className='flex-grow text-right'>
+              <button id="dropdownHoverButton" data-dropdown-toggle="dropdownHover" data-dropdown-trigger="hover" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center" type="button">
+                Select Prompt
                 <svg className="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
-                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 4 4 4-4"/>
+                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 4 4 4-4" />
                 </svg>
               </button>
 
               {/* Dropdown menu */}
               <div id="dropdownHover" className="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44">
-                  <ul className="py-2 text-sm text-gray-700" aria-labelledby="dropdownHoverButton">
-                    <li>
-                      <a href="#" className="block px-4 py-2 hover:bg-gray-100">Dashboard</a>
-                    </li>
-                    <li>
-                      <a href="#" className="block px-4 py-2 hover:bg-gray-100">Settings</a>
-                    </li>
-                    <li>
-                      <a href="#" className="block px-4 py-2 hover:bg-gray-100">Earnings</a>
-                    </li>
-                    <li>
-                      <a href="#" className="block px-4 py-2 hover:bg-gray-100">Sign out</a>
-                    </li>
-                  </ul>
+                <ul className="py-2 text-sm text-gray-700" aria-labelledby="dropdownHoverButton">
+                  <li>
+                    <a href="#" className="block px-4 py-2 hover:bg-gray-100">Dashboard</a>
+                  </li>
+                  <li>
+                    <a href="#" className="block px-4 py-2 hover:bg-gray-100">Settings</a>
+                  </li>
+                  <li>
+                    <a href="#" className="block px-4 py-2 hover:bg-gray-100">Earnings</a>
+                  </li>
+                  <li>
+                    <a href="#" className="block px-4 py-2 hover:bg-gray-100">Sign out</a>
+                  </li>
+                </ul>
               </div>
             </div>
-            <div className='flex-grow text-right'> 
+            <div className='flex-grow text-right'>
               <button 
                 type="button" 
                 className="w-auto px-4 py-1 text-sm mr-4 bg-purple-600 bg-opacity-100 text-white hover:bg-opacity-80 transition"
+                onClick={handlePost}
               >
                 Post
               </button>
@@ -128,8 +136,8 @@ const CreatePost = () => {
         <div className="flex flex-col space-y-4">
           <div className="flex items-center justify-between">
             <p>Outline Insertion</p>
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="btn hover:bg-purple-400 w-auto text-sm px-2 py-1"
               onClick={handleOutlineInsertion} // Call the handler on button click
             >
@@ -138,27 +146,26 @@ const CreatePost = () => {
           </div>
           <div className="flex items-center justify-between">
             <p>Argument Suggestion</p>
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="btn hover:bg-purple-400 w-auto text-sm px-2 py-1">
               Suggest
             </button>
           </div>
           <div className="flex items-center justify-between">
             <p>Next Sentence Suggestion</p>
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="btn hover:bg-purple-400 w-auto text-sm px-2 py-1">
               Suggest
             </button>
           </div>
           <div className="flex items-center justify-between">
             <p>Error Correction</p>
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="btn hover:bg-purple-400 w-auto text-sm px-2 py-1"
-              onSubmit={handleSubmit}>
-              
+            >
               Check
             </button>
           </div>

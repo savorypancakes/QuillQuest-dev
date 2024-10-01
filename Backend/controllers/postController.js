@@ -8,29 +8,16 @@ const { io } = require('../server'); // To emit events
 // @route   POST /api/posts
 // @access  Private
 exports.createPost = async (req, res, next) => {
-  const { content, tags } = req.body;
+  const { title, content } = req.body;
   try {
     const newPost = new Post({
-      author: req.user._id,
-      content,
-      tags
+      // author: req.user._id,
+      title,
+      content
+      // , tags
     });
 
     const savedPost = await newPost.save();
-
-    // Optionally, update tag usage
-    if (tags && tags.length > 0) {
-      tags.forEach(async (tagName) => {
-        let tag = await Tag.findOne({ name: tagName });
-        if (tag) {
-          tag.usageCount += 1;
-          await tag.save();
-        } else {
-          tag = new Tag({ name: tagName, usageCount: 1 });
-          await tag.save();
-        }
-      });
-    }
 
     // Emit event to notify clients about the new post
     const io = req.app.get('io');
@@ -48,12 +35,8 @@ exports.createPost = async (req, res, next) => {
 exports.getPosts = async (req, res, next) => {
   try {
     const posts = await Post.find()
-      .populate('author', 'username avatar')
-      .populate({
-        path: 'replies',
-        populate: { path: 'author', select: 'username avatar' }
-      })
-      .sort({ createdAt: -1 });
+      .populate('title', 'centent');
+      // .sort({ createdAt: -1 });
     res.json(posts);
   } catch (error) {
     next(error);

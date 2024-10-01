@@ -6,10 +6,11 @@ const Post = ({ post }) => {
     <div className="post">
       <div className="post-header">
         <div className="user-info">
-          <div className="user-icon">{post.author.username.charAt(0).toUpperCase()}</div>
+          <div className="user-icon"></div>
+          {/* {post.author.username.charAt(0).toUpperCase()}  | In user icon frame*/}
           <div className="user-details">
-            <span className="username">{post.author.username}</span>
-            <span className="time">{new Date(post.createdAt).toLocaleString()}</span>
+            {/* <span className="username">{post.author.username}</span>
+            <span className="time">{new Date(post.createdAt).toLocaleString()}</span> */}
           </div>
         </div>
       </div>
@@ -20,11 +21,11 @@ const Post = ({ post }) => {
 
       <div className="post-content">
       <div className="post-prompt">
-            {post.tags.map((tag, index) => (
+            {/* {post.tags.map((tag, index) => (
               <span key={index} className="tag">
                 #{tag}
               </span>
-            ))}
+            ))} */}
           </div>
         <p>{post.content}</p>
       </div>

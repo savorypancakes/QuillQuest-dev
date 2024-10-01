@@ -14,7 +14,7 @@ const {
 // @route   POST /api/posts
 // @desc    Create a new post
 // @access  Private
-router.post('/', protect, createPost);
+router.post('/', createPost);
 
 // @route   GET /api/posts
 // @desc    Get all posts

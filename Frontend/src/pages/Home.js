@@ -2,7 +2,7 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import Navbar from '../components/Navbar';
-import Post from '../components/Post';
+import Post from '../components/Post.js';
 import '../assets/css/pages/Home.css';
 
 const Home = () => {
@@ -14,12 +14,13 @@ const Home = () => {
   const fetchPosts = async () => {
     try {
       const response = await api.get('/posts');
-      setPosts(response.data);
-      setLoading(false);
+      
+      setPosts(response.status);
+      console.log(response.data)
     } catch (error) {
       console.error('Error fetching posts:', error);
-      setLoading(false);
-      // Optionally, handle error UI
+
+
     }
   };
 
