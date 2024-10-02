@@ -49,11 +49,11 @@ exports.getPosts = async (req, res, next) => {
 exports.getPostById = async (req, res, next) => {
   try {
     const post = await Post.findById(req.params.id)
-      .populate('author', 'username avatar')
-      .populate({
-        path: 'replies',
-        populate: { path: 'author', select: 'username avatar' }
-      });
+      // // .populate('author', 'username avatar')
+      // .populate({
+      //   path: 'replies',
+      //   populate: { path: 'author', select: 'username avatar' }
+      // });
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }

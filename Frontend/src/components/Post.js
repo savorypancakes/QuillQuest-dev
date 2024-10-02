@@ -1,9 +1,11 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import '../assets/css/components/Post.css';
 
 const Post = ({ post }) => {
   return (
-    <div className="post">
+    <Link to={`/posts/${post._id}`} className="post">
+      
       <div className="post-header">
         <div className="user-info">
           <div className="user-icon"></div>
@@ -21,20 +23,17 @@ const Post = ({ post }) => {
 
       <div className="post-content">
       <div className="post-prompt">
-            {/* {post.tags.map((tag, index) => (
-              <span key={index} className="tag">
-                #{tag}
-              </span>
-            ))} */}
           </div>
         <p>{post.content}</p>
       </div>
+      
 
       <div className="post-footer">
         <button className="like-button">👍 </button>
         <button className="comment-button">💬 </button>
       </div>
-    </div>
+      
+    </Link>
   );
 };
 
