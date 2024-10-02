@@ -108,4 +108,45 @@
   margin-left: 30px;
 }
 
+.navbar-profile {
+  position: relative;
+}
+
+.profile-btn {
+  background-color: #9500F0;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.dropdown-arrow {
+  margin-left: 0.5rem;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 150px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.dropdown-item {
+  font-size: small;
+  padding: 0.5rem 1rem;
+  display: block;
+  color: #333;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  text-decoration: none;
+  background-color: #f0f0f0;
+}
 

@@ -1,12 +1,21 @@
-import React from 'react';
+import React, { useState, useContext} from 'react';
 import { Link } from 'react-router-dom';  
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import HomeIcon from '@mui/icons-material/Home';
 import EditIcon from '@mui/icons-material/Edit';
 import '../assets/css/components/Navbar.css';
 import logo from '../assets/images/logo-3.png';
+import { AuthContext } from '../context/AuthContext';
 
 const Navbar = () => {
+
+  const { auth, logout } = useContext(AuthContext);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  // Toggle dropdown visibility
+  const toggleDropdown = () => {
+    setDropdownOpen(!dropdownOpen);
+  };
+
   return (
     <nav className="navbar">
       <div className="navbar-left">
@@ -23,7 +32,26 @@ const Navbar = () => {
         {/* <button className="icon-button" aria-label="Notifications">
           <NotificationsNoneIcon />
         </button> */}
-        <Link to="/login"><div className="user-icon"></div></Link>
+        {auth.user && (
+        <div className="user-icon">
+          <button onClick={toggleDropdown} className="profile-btn">
+            {auth.user.name} {/* Display user's name */}
+            <span className="dropdown-arrow"></span>
+          </button>
+
+          {/* Dropdown menu */}
+          {dropdownOpen && (
+            <div className="dropdown-menu">
+              <Link to="/profile" className="dropdown-item" onClick={toggleDropdown}>
+                Profile
+              </Link>
+              <button className="dropdown-item" onClick={logout}>
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+      )}
       </div>
     </nav>
   );
