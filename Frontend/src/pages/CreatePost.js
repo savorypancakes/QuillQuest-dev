@@ -1,5 +1,6 @@
 // Import necessary dependencies from React and other files
-import React, { useState, useRef, useEffect, useCallback } from "react"; // Import React and its hooks
+import React, { useState, useRef, useEffect, useCallback, } from "react"; // Import React and its hooks
+import { Link } from "react-router-dom";
 import TextEditor from '../components/TextEditor'; // Import the TextEditor component
 import '../assets/css/index.css'; // Import CSS styles
 import { ChatGroq } from "@langchain/groq"; // Import ChatGroq for AI functionality
@@ -110,13 +111,12 @@ const CreatePost = () => {
       <div className="flex flex-col w-full">
         {/* Header Section */}
         <div className="flex items-center h-12 p-2 bg-gray-300 text-center border-b border-gray-400">
-          <div className="w-1/12">
-            <button 
-              type="button" 
-              className="w-auto px-4 py-1 text-sm bg-purple-600 bg-opacity-100 text-white hover:bg-opacity-80"
+          <div className="w-1/12 ">
+            <Link to = "/home"
+              className="rounded-full w-auto px-4 py-1 text-sm bg-purple-600 bg-opacity-100 text-white hover:no-underline hover:bg-opacity-80"
             >
-              Primary
-            </button>
+              Home
+            </Link>
           </div>
           <div className="w-9/12 flex flex-col flex-grow text-left ml-4 mt-6">
             <input

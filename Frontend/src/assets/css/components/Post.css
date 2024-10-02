@@ -9,6 +9,10 @@
   
 }
 
+.post:hover {
+  text-decoration: none;
+}
+
 .post-header {
   display: flex;
   align-items: center;
@@ -88,6 +92,7 @@
   color: #6200ea;
   cursor: pointer;
 }
+
 
 .like-button:hover, .comment-button:hover {
   text-decoration: underline;
