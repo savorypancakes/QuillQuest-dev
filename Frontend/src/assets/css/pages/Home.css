@@ -1,6 +1,7 @@
 .home-container {
     background-color: #f8f8f8;
     padding: 80px 20px 20px; /* Padding adjusted to avoid overlap with fixed navbar */
+    min-height: 1024px;
 }
 
 .post-feed {
