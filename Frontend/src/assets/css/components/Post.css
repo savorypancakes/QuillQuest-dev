@@ -6,6 +6,11 @@
   width: 90%; /* Adjusted width to look similar to the second image */
   max-width: 800px; /* Limit max width */
   margin-bottom: 20px;
+  
+}
+
+.post:hover {
+  text-decoration: none;
 }
 
 .post-header {
@@ -87,6 +92,7 @@
   color: #6200ea;
   cursor: pointer;
 }
+
 
 .like-button:hover, .comment-button:hover {
   text-decoration: underline;
