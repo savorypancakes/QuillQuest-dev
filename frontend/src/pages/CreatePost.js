@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react"; // Impo
 import TextEditor from '../components/TextEditor'; // Import the TextEditor component
 import '../assets/css/index.css'; // Import CSS styles
 import { ChatGroq } from "@langchain/groq"; // Import ChatGroq for AI functionality
+import { Link } from 'react-router-dom';  
 
 // Define the main CreatePost component
 const CreatePost = () => {
