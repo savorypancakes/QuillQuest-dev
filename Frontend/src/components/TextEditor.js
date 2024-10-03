@@ -1,5 +1,5 @@
 // src/Tiptap.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import Document from '@tiptap/extension-document';
 import Paragraph from '@tiptap/extension-paragraph';
@@ -21,7 +21,7 @@ const TextEditor = ({ initialContent, onContentChange, className = '', editorSty
     ],
     content: content,
     onUpdate: ({ editor }) => {
-      const newContent = editor.getHTML();
+      const newContent = editor.getHTML(); // Using getHTML() instead of getText()
       setContent(newContent);
       onContentChange(newContent);
     },

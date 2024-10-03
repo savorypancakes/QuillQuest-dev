@@ -1,35 +1,31 @@
-import React, { useState, useRef, useEffect, useCallback } from "react"; // Import React and its hooks
-import TextEditor from '../components/TextEditor'; // Import the TextEditor component
-import '../assets/css/index.css'; // Import CSS styles
-import { ChatGroq } from "@langchain/groq"; // Import ChatGroq for AI functionality
-import { Link } from 'react-router-dom';  
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import TextEditor from '../components/TextEditor';
+import '../assets/css/index.css';
+import { ChatGroq } from "@langchain/groq";
+import api from '../services/api';
 
-// Define the main CreatePost component
 const CreatePost = () => {
-  // State variables using the useState hook
-  const [dropdownOpen, setDropdownOpen] = useState(false); // State for dropdown menu open/close
-  const [apiKeyError, setApiKeyError] = useState(false); // State for API key error
-  const [editorContent, setEditorContent] = useState(''); // State for editor content
-  const [title, setTitle] = useState(''); // State for the title input
-  const editorContainerRef = useRef(null); // Ref for the editor container
-  const [editorWidth, setEditorWidth] = useState('100%'); // State for editor width
+  const navigate = useNavigate();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [apiKeyError, setApiKeyError] = useState(false);
+  const [editorContent, setEditorContent] = useState('');
+  const [title, setTitle] = useState('');
+  const editorContainerRef = useRef(null);
+  const [editorWidth, setEditorWidth] = useState('100%');
 
-  // Function to generate an outline using AI
   const generateOutline = useCallback(async () => {
-    // Check if the title is empty
     if (!title.trim()) {
       alert("Please enter a title or topic before generating an outline.");
       return;
     }
 
     try {
-      // Get the API key from environment variables
       const apiKey = process.env.REACT_APP_GROQ_API_KEY;
       if (!apiKey) {
         throw new Error("Groq API key not found");
       }
 
-      // Initialize the ChatGroq instance
       const llm = new ChatGroq({
         apiKey: apiKey,
         model: "llama3-8b-8192",
@@ -38,17 +34,15 @@ const CreatePost = () => {
         maxRetries: 2,
       });
 
-      // Send a request to the AI model
       const aiMsg = await llm.invoke([
         {
           role: "system",
-          content: "Generate an outline of an essay based on the user's title or topic. Only generate an essay outline, no greetings. Ensure the outline only guides the user to think",
+          content: "Generate a outline of an essay based on the user's title or topic. Only generate an essay outline, no greetings. Ensure the outline only guides the user to think",
         },
         { role: "user", content: title },
       ]);
       console.log("Generated outline:", aiMsg.content);
 
-      // Process the AI response and update the editor content
       const processedResult = aiMsg.content.split('\n').map(line => `<p>${line}</p>`).join('');
       setEditorContent(processedResult);
       setApiKeyError(false);
@@ -60,9 +54,8 @@ const CreatePost = () => {
         setEditorContent("<p>Error: Outline generation failed</p>");
       }
     }
-  }, [title]); // This function depends on the 'title' state
+  }, [title]);
 
-  // Effect hook to handle editor width responsiveness
   useEffect(() => {
     const updateEditorWidth = () => {
       if (editorContainerRef.current) {
@@ -70,24 +63,35 @@ const CreatePost = () => {
       }
     };
 
-    updateEditorWidth(); // Call immediately
-    window.addEventListener('resize', updateEditorWidth); // Add event listener for window resize
+    updateEditorWidth();
+    window.addEventListener('resize', updateEditorWidth);
 
-    // Cleanup function to remove event listener
     return () => window.removeEventListener('resize', updateEditorWidth);
-  }, []); // Empty dependency array means this effect runs once on mount
+  }, []);
 
-  // Function to toggle the dropdown menu
   const toggleDropdown = () => {
     setDropdownOpen(!dropdownOpen);
   };
 
-  // Function to handle changes in the editor content
   const handleEditorChange = (content) => {
     setEditorContent(content);
   };
 
-  // The main JSX returned by the component
+  const handlePost = async () => {
+    try {
+      const response = await api.post('/posts', { 
+        "title": title, 
+        "content": editorContent, 
+        "createAt": new Date()
+      });
+      console.log('Post created successfully:', response.data);
+      setEditorContent('');
+      navigate('/home');
+    } catch (err) {
+      console.error('Error creating post:', err);
+    }
+  };
+
   return (
     <div className="flex w-full h-screen">
       <div className="flex flex-col w-full">
@@ -187,9 +191,57 @@ const CreatePost = () => {
                 </div>
               )}
             </div>
-            {/* Button for Post Submission */}
-            <button type="button" className="ml-3 text-white bg-green-500 hover:bg-green-600 px-4 py-2 text-sm font-medium rounded-lg">
-              Post
+            {/* Post Button */}
+            <div className='flex-grow text-right'> 
+              <button 
+                type="button" 
+                className="w-auto px-4 py-1 text-sm mr-4 bg-purple-600 bg-opacity-100 text-white hover:bg-opacity-80 transition"
+                onClick={handlePost}
+              >
+                Post
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Sidebar */}
+      <div className="w-2/12 min-w-[200px] border-l border-gray-400 p-4 overflow-y-auto">
+        <div className="flex flex-col space-y-4">
+          {/* Outline Insertion Button */}
+          <div className="flex items-center justify-between">
+            <p>Outline Insertion</p>
+            <button 
+              type="button"
+              onClick={generateOutline}
+              className="btn hover:bg-purple-400 w-auto text-sm px-2 py-1"
+            >
+              Insert
+            </button>
+          </div>
+          {/* Other suggestion buttons */}
+          <div className="flex items-center justify-between">
+            <p>Argument Suggestion</p>
+            <button 
+              type="button" 
+              className="btn hover:bg-purple-400 w-auto text-sm px-2 py-1">
+              Suggest
+            </button>
+          </div>
+          <div className="flex items-center justify-between">
+            <p>Next Sentence Suggestion</p>
+            <button 
+              type="button" 
+              className="btn hover:bg-purple-400 w-auto text-sm px-2 py-1">
+              Suggest
+            </button>
+          </div>
+          <div className="flex items-center justify-between">
+            <p>Error Correction</p>
+            <button 
+              type="button" 
+              className="btn hover:bg-purple-400 w-auto text-sm px-2 py-1">
+              Check
             </button>
           </div>
         </div>
