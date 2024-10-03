@@ -83,8 +83,7 @@ const Login = () => {
         "email": formData.email,
         "password": formData.password,
       });
-      console.log(formData.email);
-      console.log(formData.password);
+      
       // Assuming backend returns token and user info
       const { token, user } = response.data;
 
@@ -95,7 +94,7 @@ const Login = () => {
       login(token, user);
       
       // Optionally, store user info in context or state
-      // Redirect to dashboard or home page
+      // Redirect to home page
       setSuccessMessage('Login successful! Redirecting...');
       navigate('/home');
       
