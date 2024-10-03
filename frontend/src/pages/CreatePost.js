@@ -1,15 +1,10 @@
-// Import necessary dependencies from React and other files
-import React, { useState, useRef, useEffect, useCallback, } from "react"; // Import React and its hooks
-import { Link } from "react-router-dom";
+import React, { useState, useRef, useEffect, useCallback } from "react"; // Import React and its hooks
 import TextEditor from '../components/TextEditor'; // Import the TextEditor component
 import '../assets/css/index.css'; // Import CSS styles
 import { ChatGroq } from "@langchain/groq"; // Import ChatGroq for AI functionality
-import { useNavigate } from 'react-router-dom';
-import api from '../services/api'
 
 // Define the main CreatePost component
 const CreatePost = () => {
-  const navigate = useNavigate();
   // State variables using the useState hook
   const [dropdownOpen, setDropdownOpen] = useState(false); // State for dropdown menu open/close
   const [apiKeyError, setApiKeyError] = useState(false); // State for API key error
@@ -17,6 +12,7 @@ const CreatePost = () => {
   const [title, setTitle] = useState(''); // State for the title input
   const editorContainerRef = useRef(null); // Ref for the editor container
   const [editorWidth, setEditorWidth] = useState('100%'); // State for editor width
+
   // Function to generate an outline using AI
   const generateOutline = useCallback(async () => {
     // Check if the title is empty
@@ -45,7 +41,7 @@ const CreatePost = () => {
       const aiMsg = await llm.invoke([
         {
           role: "system",
-          content: "Generate a outline of an essay based on the user's title or topic. Only generate an essay outline, no greetings. Ensure the outline only guides the user to think",
+          content: "Generate an outline of an essay based on the user's title or topic. Only generate an essay outline, no greetings. Ensure the outline only guides the user to think",
         },
         { role: "user", content: title },
       ]);
@@ -90,21 +86,6 @@ const CreatePost = () => {
     setEditorContent(content);
   };
 
-  const handlePost = async () => {
-    const Now = new Date();
-    try {
-      
-      const response = await api.post('/posts', { 
-        "title": title, 
-        "content":editorContent, 
-        "createAt": new Date});
-      console.log('Post created successfully:', response.data);
-      setEditorContent('');
-      navigate('/home');
-    } catch (err) {
-      console.error('Error creating post:', err);
-    }
-  };
   // The main JSX returned by the component
   return (
     <div className="flex w-full h-screen">
@@ -112,7 +93,7 @@ const CreatePost = () => {
         {/* Header Section */}
         <div className="flex items-center h-12 p-2 bg-gray-300 text-center border-b border-gray-400">
           <div className="w-1/12 ">
-            <Link to = "/home"
+            <Link to="/home"
               className="rounded-full w-auto px-4 py-1 text-sm bg-purple-600 bg-opacity-100 text-white hover:no-underline hover:bg-opacity-80"
             >
               Home
@@ -205,56 +186,9 @@ const CreatePost = () => {
                 </div>
               )}
             </div>
-            {/* Post Button */}
-            <div className='flex-grow text-right'> 
-              <button 
-                type="button" 
-                className="w-auto px-4 py-1 text-sm mr-4 bg-purple-600 bg-opacity-100 text-white hover:bg-opacity-80 transition"
-              onClick={handlePost}>
-                Post
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Sidebar */}
-      <div className="w-2/12 min-w-[200px] border-l border-gray-400 p-4 overflow-y-auto">
-        <div className="flex flex-col space-y-4">
-          {/* Outline Insertion Button */}
-          <div className="flex items-center justify-between">
-            <p>Outline Insertion</p>
-            <button 
-              type="button"
-              onClick={generateOutline}
-              className="btn hover:bg-purple-400 w-auto text-sm px-2 py-1"
-            >
-              Insert
-            </button>
-          </div>
-          {/* Other suggestion buttons */}
-          <div className="flex items-center justify-between">
-            <p>Argument Suggestion</p>
-            <button 
-              type="button" 
-              className="btn hover:bg-purple-400 w-auto text-sm px-2 py-1">
-              Suggest
-            </button>
-          </div>
-          <div className="flex items-center justify-between">
-            <p>Next Sentence Suggestion</p>
-            <button 
-              type="button" 
-              className="btn hover:bg-purple-400 w-auto text-sm px-2 py-1">
-              Suggest
-            </button>
-          </div>
-          <div className="flex items-center justify-between">
-            <p>Error Correction</p>
-            <button 
-              type="button" 
-              className="btn hover:bg-purple-400 w-auto text-sm px-2 py-1">
-              Check
+            {/* Button for Post Submission */}
+            <button type="button" className="ml-3 text-white bg-green-500 hover:bg-green-600 px-4 py-2 text-sm font-medium rounded-lg">
+              Post
             </button>
           </div>
         </div>
