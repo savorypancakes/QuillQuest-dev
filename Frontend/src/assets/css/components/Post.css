@@ -6,7 +6,12 @@
   padding: 20px;
   width: 100%; /* Adjusted for full width */
   max-width: 800px; /* Limit max width */
-  margin: 0 auto 20px; /* Center post and add bottom margin */
+  margin-bottom: 20px;
+  
+}
+
+.post:hover {
+  text-decoration: none;
 }
 
 /* Post Header */
@@ -116,6 +121,7 @@
   color: #6200ea;
   cursor: pointer;
 }
+
 
 .like-button:hover, .comment-button:hover {
   text-decoration: underline;

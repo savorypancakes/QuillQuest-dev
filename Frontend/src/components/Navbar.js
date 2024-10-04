@@ -1,42 +1,58 @@
-import React from 'react';
+import React, { useState, useContext} from 'react';
 import { Link } from 'react-router-dom';  
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import HomeIcon from '@mui/icons-material/Home';
 import EditIcon from '@mui/icons-material/Edit';
-import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
-import '../assets/css/components/Navbar.css';  // Make sure the CSS path is correct
-import logo from '../assets/images/logo-3.png'; // Ensure the logo path is correct
+import '../assets/css/components/Navbar.css';
+import logo from '../assets/images/logo-3.png';
+import { AuthContext } from '../context/AuthContext';
 
 const Navbar = () => {
+
+  const { auth, logout } = useContext(AuthContext);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  // Toggle dropdown visibility
+  const toggleDropdown = () => {
+    setDropdownOpen(!dropdownOpen);
+  };
+
   return (
     <nav className="navbar">
       {/* Left section with logo and text */}
       <div className="navbar-left">
-        <Link to="/">
-          <img src={logo} alt="Logo" className="logo-image" />
-          <div className="logo-text">QuillQuest</div> 
-        </Link>
+      <Link to="/home"><img src={logo} alt="Logo" className="logo-image" /></Link>
+        <div className="logo-text">Quillquest</div>
       </div>
 
-      {/* Center section with Home and Create Post */}
-      <div className="navbar-center">
-        <Link to="/home" className="icon-button">
-          <HomeIcon className="nav-icon" />
-          Home
-        </Link>
-        <Link to="/createpost" className="icon-button">
-          <EditIcon className="nav-icon" />
-          Create Post
-        </Link>
-      </div>
 
-      {/* Right section with notifications and user profile */}
       <div className="navbar-right">
-        <button className="icon-button" aria-label="Notifications">
+        <ul className="nav-links">
+          <li><Link to="/home"> Home <HomeIcon /></Link></li>
+          <li><Link to="/createpost"> Create  <EditIcon /></Link></li>
+        </ul>
+        {/* <button className="icon-button" aria-label="Notifications">
           <NotificationsNoneIcon />
-        </button>
-        <Link to="/profile">
-          <div className="user-icon">U</div>
-        </Link>
+        </button> */}
+        {auth.user && (
+        <div className="user-icon">
+          <button onClick={toggleDropdown} className="profile-btn">
+            {auth.user.name} {/* Display user's name */}
+            <span className="dropdown-arrow"></span>
+          </button>
+
+          {/* Dropdown menu */}
+          {dropdownOpen && (
+            <div className="dropdown-menu">
+              <Link to="/profile" className="dropdown-item" onClick={toggleDropdown}>
+                Profile
+              </Link>
+              <button className="dropdown-item" onClick={logout}>
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+      )}
       </div>
     </nav>
   );

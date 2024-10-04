@@ -41,15 +41,30 @@
 /* Center section (Home and Create Post buttons) */
 .navbar-center {
   display: flex;
-  gap: 15px;
+  align-items: center;
+}
+
+.nav-links {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  
 }
 
 .icon-button {
   display: flex;
   align-items: center;
-  background-color: #f0f0f0;
-  padding: 5px 12px;
-  border-radius: 20px;
+  background-color: #d6d6d6;
+  border-radius: 0px;
+  padding: 5px 10px;
+  transition: background-color linear, color linear;
+}
+
+.nav-links li a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-decoration: none;
   color: #333;
   font-size: 1rem;
@@ -69,7 +84,23 @@
 .navbar-right {
   display: flex;
   align-items: center;
-  gap: 15px;
+  justify-content: flex-end;
+  width: 20%;
+}
+
+.icon-button {
+  background-color: transparent;
+  color: #000;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin-right: 10px;
+  margin-left: 30px;
+  height: 40px;
+  width: 40px;
 }
 
 .user-icon {
@@ -81,7 +112,51 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
-  font-weight: bold;
+  overflow: hidden;
+  font-size: 20px; /* ขนาดของตัวอักษร */
+  box-sizing: border-box; /* ทำให้ padding ไม่ส่งผลต่อขนาด */
+  margin-left: 30px;
+}
+
+.navbar-profile {
+  position: relative;
+}
+
+.profile-btn {
+  background-color: #9500F0;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.dropdown-arrow {
+  margin-left: 0.5rem;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 150px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.dropdown-item {
+  font-size: small;
+  padding: 0.5rem 1rem;
+  display: block;
+  color: #333;
+  text-decoration: none;
   cursor: pointer;
 }
+
+.dropdown-item:hover {
+  text-decoration: none;
+  background-color: #f0f0f0;
+}
+
