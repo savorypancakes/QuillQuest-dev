@@ -99,11 +99,14 @@ const CreatePost = () => {
         Example:
         User: Animals hunt other animals, that is life.
         You: 
-        1: Do the unique physical adaptations of cats, such as their retractable claws and flexible spine, provide a distinct advantage in their ability to stalk and capture prey?
+        1. Physical Adaptations: 
+        Do the unique physical adaptations of cats, such as their retractable claws and flexible spine, provide a distinct advantage in their ability to stalk and capture prey?
 
-        2: Can the success of feral cat populations in controlling pest populations be attributed to their natural hunting instincts and ability to adapt to their environment?
+        2. Enviromental Adapation and Hunting Instincts: 
+        Can the success of feral cat populations in controlling pest populations be attributed to their natural hunting instincts and ability to adapt to their environment?
 
-        3: Is the stealth and patience required for hunting a key factor in the development of cats' intelligence and problem-solving abilities, making them formidable predators?
+        3. Stealth and Intelligence: 
+        Is the stealth and patience required for hunting a key factor in the development of cats' intelligence and problem-solving abilities, making them formidable predators?
         `;
         
 
@@ -120,15 +123,14 @@ const CreatePost = () => {
         4. Match the tone and style of the existing content.
         5. Keep the suggestion concise and impactful.
         6. No greetings, no explanations, only show the list of sentences, no "here are the sentences".
-        7: Add a title to each argument.
         Example:
         User: Animals hunt other animals, that is life.
         You: 
-        1. Primal Instincts: This primal instinct has shaped the evolution of species, driving the development of unique adaptations and strategies for survival.
+        1. This primal instinct has shaped the evolution of species, driving the development of unique adaptations and strategies for survival.
 
-        2. Hierarchical Structure: The hierarchical structure of the food chain, with predators at the top and prey at the bottom, is a direct result of this fundamental drive. 
+        2. The hierarchical structure of the food chain, with predators at the top and prey at the bottom, is a direct result of this fundamental drive. 
 
-        3. Teamwork: From the majestic lioness stalking her prey to the industrious ant working together to capture its own, hunting is a ubiquitous and fascinating aspect of the animal kingdom.`;
+        3. From the majestic lioness stalking her prey to the industrious ant working together to capture its own, hunting is a ubiquitous and fascinating aspect of the animal kingdom.`;
 
         userPrompt = `Here's the current essay content:
 
