@@ -4,6 +4,7 @@ import TextEditor from '../components/TextEditor';
 import '../assets/css/index.css';
 import { ChatGroq } from "@langchain/groq";
 import api from '../services/api';
+import Draggable from 'react-draggable';
 
 const CreatePost = () => {
   const navigate = useNavigate();
@@ -13,6 +14,11 @@ const CreatePost = () => {
   const [title, setTitle] = useState('');
   const editorContainerRef = useRef(null);
   const [editorWidth, setEditorWidth] = useState('100%');
+
+  const [argumentSuggestion, setArgumentSuggestion] = useState('');
+  const [sentenceSuggestion, setSentenceSuggestion] = useState('');
+  const [showArgumentPopup, setShowArgumentPopup] = useState(false);
+  const [showSentencePopup, setShowSentencePopup] = useState(false);
 
   const generateOutline = useCallback(async () => {
     if (!title.trim()) {
@@ -56,6 +62,103 @@ const CreatePost = () => {
     }
   }, [title]);
 
+  const generateSuggestion = useCallback(async (type) => {
+    if (type === 'argument' && !title.trim()) {
+      alert("Please enter a title before generating an argument suggestion.");
+      return;
+    }
+    if (type === 'sentence' && !editorContent.trim()) {
+      alert("Please enter some content before generating a next sentence suggestion.");
+      return;
+    }
+
+    try {
+      const apiKey = process.env.REACT_APP_GROQ_API_KEY;
+      if (!apiKey) {
+        throw new Error("Groq API key not found");
+      }
+
+      const llm = new ChatGroq({
+        apiKey: apiKey,
+        model: "llama3-8b-8192",
+        temperature: 0.7,
+        maxTokens: 150,
+        maxRetries: 2,
+      });
+
+      let systemPrompt, userPrompt;
+
+      if (type === 'argument') {
+        systemPrompt = `You are an expert essay writer and critical thinker. Your task is to generate a list 3 options of strong, relevant arguments based on the given essay title. Follow these guidelines:
+        1. Analyze the title to identify the main topic and potential stance.
+        2. Propose a logical, well-reasoned argument that could support a position related to the title.
+        3. Ensure the argument is specific and could be supported by potential evidence or examples and is in question form. The argument should be to guide the users and make them think not allow to copy paste it into the essay.
+        4. Keep the suggestion concise, around 2-3 sentences max 100 words.
+        5. Use language that would flow well in an academic essay.
+        6. Never show greetings, never show anything EXCEPT the list of sentences, no "Here are three potential arguments that could be used in an essay on the topic:".
+        Example:
+        User: Animals hunt other animals, that is life.
+        You: 
+        1: Do the unique physical adaptations of cats, such as their retractable claws and flexible spine, provide a distinct advantage in their ability to stalk and capture prey?
+
+        2: Can the success of feral cat populations in controlling pest populations be attributed to their natural hunting instincts and ability to adapt to their environment?
+
+        3: Is the stealth and patience required for hunting a key factor in the development of cats' intelligence and problem-solving abilities, making them formidable predators?
+        `;
+        
+
+        userPrompt = `Here's the essay title:
+
+        "${title}"
+
+        Based on this title, suggest a strong argument that could be used in the essay.`;
+      } else {
+        systemPrompt = `You are an expert in essay writing and maintaining logical flow. Your task is to generate a list 3 options of logical next sentences that continues the essay's flow seamlessly. Follow these guidelines:
+        1. Analyze the current content and identify the direction of the argument or narrative.
+        2. Propose a sentence that naturally follows from the last paragraph or sentence.
+        3. Ensure the suggested sentence adds value, either by extending an idea, providing a transition, or introducing a new related point.
+        4. Match the tone and style of the existing content.
+        5. Keep the suggestion concise and impactful.
+        6. No greetings, no explanations, only show the list of sentences, no "here are the sentences".
+        7: Add a title to each argument.
+        Example:
+        User: Animals hunt other animals, that is life.
+        You: 
+        1. Primal Instincts: This primal instinct has shaped the evolution of species, driving the development of unique adaptations and strategies for survival.
+
+        2. Hierarchical Structure: The hierarchical structure of the food chain, with predators at the top and prey at the bottom, is a direct result of this fundamental drive. 
+
+        3. Teamwork: From the majestic lioness stalking her prey to the industrious ant working together to capture its own, hunting is a ubiquitous and fascinating aspect of the animal kingdom.`;
+
+        userPrompt = `Here's the current essay content:
+
+        "${editorContent}"
+
+        Based on this, suggest a logical next sentence to continue the essay's flow.`;
+      }
+
+      const aiMsg = await llm.invoke([
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ]);
+
+      if (type === 'argument') {
+        setArgumentSuggestion(aiMsg.content);
+        setShowArgumentPopup(true);
+      } else {
+        setSentenceSuggestion(aiMsg.content);
+        setShowSentencePopup(true);
+      }
+    } catch (error) {
+      console.error(`${type} suggestion generation error:`, error);
+      if (error.message.includes("API key")) {
+        setApiKeyError(true);
+      } else {
+        alert(`Error: ${type} suggestion generation failed`);
+      }
+    }
+  }, [title, editorContent]);
+
   useEffect(() => {
     const updateEditorWidth = () => {
       if (editorContainerRef.current) {
@@ -92,9 +195,48 @@ const CreatePost = () => {
     }
   };
 
+  const handleArgumentSuggest = () => generateSuggestion('argument');
+  const handleSentenceSuggest = () => generateSuggestion('sentence');
+
+  const SuggestionPopup = ({ show, onClose, title, content }) => (
+    show && (
+      <Draggable
+        handle=".handle"
+        defaultPosition={{x: -320, y: 0}}
+        bounds="parent"
+      >
+        <div className="absolute right-0 top-0 w-80 z-20">
+          <div className="bg-white border border-gray-300 rounded shadow-lg">
+            <div className="handle bg-gray-200 p-2 cursor-move flex justify-between items-center">
+              <h3 className="font-bold">{title}</h3>
+            </div>
+            <div className="p-4 text-left">
+              {content ? (
+                content.split('\n').map((line, index) => (
+                  <React.Fragment key={index}>
+                    {line}
+                    {index < content.split('\n').length - 1 && <br />}
+                  </React.Fragment>
+                ))
+              ) : (
+                <p>No suggestion available</p>
+              )}
+            </div>
+            <button
+                onClick={onClose}
+                className="text-gray-600 hover:text-gray-800 text-white"
+              >
+              Close
+            </button>
+          </div>
+        </div>
+      </Draggable>
+    )
+  );
+
   return (
     <div className="flex w-full h-screen">
-      <div className="flex flex-col w-full">
+      <div className="flex flex-col w-full relative">
         {/* Header Section */}
         <div className="flex items-center h-12 p-2 bg-gray-300 text-center border-b border-gray-400">
           <div className="w-1/12 ">
@@ -203,10 +345,24 @@ const CreatePost = () => {
             </div>
           </div>
         </div>
+
+        {/* Suggestion Popups */}
+        <SuggestionPopup
+          show={showArgumentPopup}
+          onClose={() => setShowArgumentPopup(false)}
+          title="Argument Suggestion"
+          content={argumentSuggestion}
+        />
+        <SuggestionPopup
+          show={showSentencePopup}
+          onClose={() => setShowSentencePopup(false)}
+          title="Next Sentence Suggestion"
+          content={sentenceSuggestion}
+        />
       </div>
 
       {/* Right Sidebar */}
-      <div className="w-2/12 min-w-[200px] border-l border-gray-400 p-4 overflow-y-auto">
+      <div className="w-2/12 min-w-[200px] border-l border-gray-400 p-4 overflow-y-auto relative z-10">
         <div className="flex flex-col space-y-4">
           {/* Outline Insertion Button */}
           <div className="flex items-center justify-between">
@@ -219,23 +375,28 @@ const CreatePost = () => {
               Insert
             </button>
           </div>
-          {/* Other suggestion buttons */}
+          {/* Argument Suggestion */}
           <div className="flex items-center justify-between">
             <p>Argument Suggestion</p>
             <button 
-              type="button" 
+              type="button"
+              onClick={handleArgumentSuggest}
               className="btn hover:bg-purple-400 w-auto text-sm px-2 py-1">
               Suggest
             </button>
+
           </div>
-          <div className="flex items-center justify-between">
+          {/* Next Sentence Suggestion */}
+          <div className="flex items-center justify-between relative">
             <p>Next Sentence Suggestion</p>
             <button 
               type="button" 
+              onClick={handleSentenceSuggest}
               className="btn hover:bg-purple-400 w-auto text-sm px-2 py-1">
               Suggest
             </button>
           </div>
+          {/* Erro*/}
           <div className="flex items-center justify-between">
             <p>Error Correction</p>
             <button 
