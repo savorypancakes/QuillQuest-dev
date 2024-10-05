@@ -13,7 +13,7 @@ const ErrorHighlight = Extension.create({
   addGlobalAttributes() {
     return [
       {
-        types: ['text'],
+        types: ['textStyle'],
         attributes: {
           errorHighlight: {
             default: null,
@@ -64,7 +64,20 @@ const TextEditor = ({ initialContent, onContentChange, errors, className = '', e
 
   useEffect(() => {
     if (editor && errors) {
-      editor.view.dispatch(editor.view.state.tr.setMeta('errorHighlight', errors));
+      // Clear previous error marks
+      editor.commands.unsetAllMarks();
+
+      // Apply new error marks
+      errors.forEach(error => {
+        editor.chain()
+          .focus()
+          .setTextSelection({ from: error.offset, to: error.offset + error.length })
+          .setMark('textStyle', { errorHighlight: JSON.stringify(error) })
+          .run();
+      });
+
+      // Reset selection to end of document
+      editor.commands.setTextSelection(editor.state.doc.content.size);
     }
   }, [editor, errors]);
 
