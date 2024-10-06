@@ -41,3 +41,8 @@
     pointer-events: none;
     height: 0;
   }
+
+  .ProseMirror .highlight {
+    background-color: rgba(255, 0, 0, 0.2);
+    text-decoration: wavy underline red;
+  }
