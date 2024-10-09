@@ -1,38 +1,31 @@
-// Import necessary dependencies from React and other files
-import React, { useState, useRef, useEffect, useCallback, } from "react"; // Import React and its hooks
-import { Link } from "react-router-dom";
-import TextEditor from '../components/TextEditor'; // Import the TextEditor component
-import '../assets/css/index.css'; // Import CSS styles
-import { ChatGroq } from "@langchain/groq"; // Import ChatGroq for AI functionality
-import { useNavigate } from 'react-router-dom';
-import api from '../services/api'
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import TextEditor from '../components/TextEditor';
+import '../assets/css/index.css';
+import { ChatGroq } from "@langchain/groq";
+import api from '../services/api';
 
-// Define the main CreatePost component
 const CreatePost = () => {
   const navigate = useNavigate();
-  // State variables using the useState hook
-  const [dropdownOpen, setDropdownOpen] = useState(false); // State for dropdown menu open/close
-  const [apiKeyError, setApiKeyError] = useState(false); // State for API key error
-  const [editorContent, setEditorContent] = useState(''); // State for editor content
-  const [title, setTitle] = useState(''); // State for the title input
-  const editorContainerRef = useRef(null); // Ref for the editor container
-  const [editorWidth, setEditorWidth] = useState('100%'); // State for editor width
-  // Function to generate an outline using AI
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [apiKeyError, setApiKeyError] = useState(false);
+  const [editorContent, setEditorContent] = useState('');
+  const [title, setTitle] = useState('');
+  const editorContainerRef = useRef(null);
+  const [editorWidth, setEditorWidth] = useState('100%');
+
   const generateOutline = useCallback(async () => {
-    // Check if the title is empty
     if (!title.trim()) {
       alert("Please enter a title or topic before generating an outline.");
       return;
     }
 
     try {
-      // Get the API key from environment variables
       const apiKey = process.env.REACT_APP_GROQ_API_KEY;
       if (!apiKey) {
         throw new Error("Groq API key not found");
       }
 
-      // Initialize the ChatGroq instance
       const llm = new ChatGroq({
         apiKey: apiKey,
         model: "llama3-8b-8192",
@@ -41,7 +34,6 @@ const CreatePost = () => {
         maxRetries: 2,
       });
 
-      // Send a request to the AI model
       const aiMsg = await llm.invoke([
         {
           role: "system",
@@ -51,7 +43,6 @@ const CreatePost = () => {
       ]);
       console.log("Generated outline:", aiMsg.content);
 
-      // Process the AI response and update the editor content
       const processedResult = aiMsg.content.split('\n').map(line => `<p>${line}</p>`).join('');
       setEditorContent(processedResult);
       setApiKeyError(false);
@@ -63,9 +54,8 @@ const CreatePost = () => {
         setEditorContent("<p>Error: Outline generation failed</p>");
       }
     }
-  }, [title]); // This function depends on the 'title' state
+  }, [title]);
 
-  // Effect hook to handle editor width responsiveness
   useEffect(() => {
     const updateEditorWidth = () => {
       if (editorContainerRef.current) {
@@ -73,26 +63,23 @@ const CreatePost = () => {
       }
     };
 
-    updateEditorWidth(); // Call immediately
-    window.addEventListener('resize', updateEditorWidth); // Add event listener for window resize
+    updateEditorWidth();
+    window.addEventListener('resize', updateEditorWidth);
 
-    // Cleanup function to remove event listener
     return () => window.removeEventListener('resize', updateEditorWidth);
-  }, []); // Empty dependency array means this effect runs once on mount
+  }, []);
 
-  // Function to toggle the dropdown menu
   const toggleDropdown = () => {
     setDropdownOpen(!dropdownOpen);
   };
 
-  // Function to handle changes in the editor content
   const handleEditorChange = (content) => {
     setEditorContent(content);
   };
 
   const handlePost = async () => {
-    const Now = new Date();
     try {
+
       const token = localStorage.getItem('token');
       
       const response = await api.post('/posts',
@@ -104,6 +91,7 @@ const CreatePost = () => {
             Authorization: `Bearer ${token}`, // Pass token in Authorization header
           },
         });
+
       console.log('Post created successfully:', response.data);
       setEditorContent('');
       navigate('/home');
@@ -111,14 +99,14 @@ const CreatePost = () => {
       console.error('Error creating post:', err);
     }
   };
-  // The main JSX returned by the component
+
   return (
     <div className="flex w-full h-screen">
       <div className="flex flex-col w-full">
         {/* Header Section */}
         <div className="flex items-center h-12 p-2 bg-gray-300 text-center border-b border-gray-400">
           <div className="w-1/12 ">
-            <Link to = "/home"
+            <Link to="/home"
               className="rounded-full w-auto px-4 py-1 text-sm bg-purple-600 bg-opacity-100 text-white hover:no-underline hover:bg-opacity-80"
             >
               Home
@@ -216,7 +204,8 @@ const CreatePost = () => {
               <button 
                 type="button" 
                 className="w-auto px-4 py-1 text-sm mr-4 bg-purple-600 bg-opacity-100 text-white hover:bg-opacity-80 transition"
-              onClick={handlePost}>
+                onClick={handlePost}
+              >
                 Post
               </button>
             </div>
