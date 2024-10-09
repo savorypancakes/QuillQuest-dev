@@ -14,6 +14,7 @@ const CreatePost = () => {
   const [title, setTitle] = useState('');
   const editorContainerRef = useRef(null);
 
+
   // Remove this line if you're not using editorWidth
   const [editorWidth] = useState('100%');
 
@@ -25,6 +26,21 @@ const CreatePost = () => {
   const [errors, setErrors] = useState([]);
   const [isChecking, setIsChecking] = useState(false);
   const editorRef = useRef(null);
+
+  const [prompts, setPrompts] = useState([]);
+
+  useEffect(() => {
+    const fetchPrompts = async () => {
+      try {
+        const response = await api.get('/prompts/all'); // Remove the extra '/api'
+        setPrompts(response.data);
+      } catch (error) {
+        console.error('Error fetching prompts:', error);
+      }
+    };
+  
+    fetchPrompts();
+  }, []);
 
   const generateOutline = useCallback(async () => {
     if (!title.trim()) {
@@ -341,7 +357,24 @@ const CreatePost = () => {
   }, [errors]);
 
   const toggleDropdown = () => {
+    if (!dropdownOpen && prompts.length === 0) {
+      const fetchPrompts = async () => {
+        try {
+          const response = await api.get('/prompts/all'); // Remove the extra '/api'
+          setPrompts(response.data);
+        } catch (error) {
+          console.error('Error fetching prompts:', error);
+        }
+      };
+      fetchPrompts();
+    }
     setDropdownOpen(!dropdownOpen);
+  };
+
+  // Function to handle prompt selection
+  const handlePromptSelect = (prompt) => {
+    setTitle(prompt.topic);
+    toggleDropdown();
   };
 
   const handleEditorChange = (content) => {
@@ -477,28 +510,29 @@ const CreatePost = () => {
                 className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center" 
                 type="button"
               >
-                Dropdown hover
+                Select Prompt
                 <svg className="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
                   <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 4 4 4-4"/>
                 </svg>
               </button>
 
-              {/* Dropdown menu items */}
               {dropdownOpen && (
-                <div className="absolute right-0 bottom-full mb-2 z-10 bg-white divide-y divide-gray-100 rounded-lg shadow w-44">
-                  <ul className="py-2 text-sm text-gray-700" aria-labelledby="dropdownHoverButton">
-                    <li>
-                      <button onClick={() => {}} className="block w-full text-left px-4 py-2 hover:bg-gray-100">Dashboard</button>
-                    </li>
-                    <li>
-                      <button onClick={() => {}} className="block w-full text-left px-4 py-2 hover:bg-gray-100">Settings</button>
-                    </li>
-                    <li>
-                      <button onClick={() => {}} className="block w-full text-left px-4 py-2 hover:bg-gray-100">Earnings</button>
-                    </li>
-                    <li>
-                      <button onClick={() => {}} className="block w-full text-left px-4 py-2 hover:bg-gray-100">Sign out</button>
-                    </li>
+                <div className="absolute right-0 bottom-full mb-2 z-10 bg-white divide-y divide-gray-100 rounded-lg shadow w-64 max-h-60 overflow-y-auto">
+                  <ul className="py-2 text-sm text-gray-700">
+                    {prompts.length > 0 ? (
+                      prompts.map((prompt, index) => (
+                        <li key={index}>
+                          <button 
+                            onClick={() => handlePromptSelect(prompt)}
+                            className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                          >
+                            {prompt.topic}
+                          </button>
+                        </li>
+                      ))
+                    ) : (
+                      <li><p className="px-4 py-2">No prompts available</p></li>
+                    )}
                   </ul>
                 </div>
               )}

@@ -6,36 +6,57 @@ import '../assets/css/pages/Home.css';
 
 const Home = () => {
   const [posts, setPosts] = useState([]);
+  const [prompts, setPrompts] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Fetch posts from the backend
   const fetchPosts = async () => {
     try {
-      const response = await api.get('/posts');  // Ensure '/posts' endpoint is correct
-      setPosts(response.data);  // Assigning actual data to posts
-      const sortedPosts = response.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // Sort posts by latest first
+      const response = await api.get('/posts');
+      const sortedPosts = response.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setPosts(sortedPosts);
-      setLoading(false);  // Update loading state once data is fetched
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching posts:', error);
-      setLoading(false);  // Even on error, set loading to false
+      setLoading(false);
     }
   };
 
-  // Fetch posts when the component mounts
+  // Fetch prompts from the backend
+  const fetchPrompts = async () => {
+    try {
+      const response = await api.get('/prompts/all');
+      setPrompts(response.data);
+    } catch (error) {
+      console.error('Error fetching prompts:', error);
+    }
+  };
+
   useEffect(() => {
     fetchPosts();
-  }, []);  // Empty dependency array ensures it runs only once when component mounts
+    fetchPrompts();
+  }, []);
 
   return (
     <div className="home-container">
       <Navbar />
-      <div className="post-feed">
-        {loading ? (
-          <p>Loading...</p>
-        ) : (
-          posts.map((post) => <Post key={post._id} post={post} />)
-        )}
+      <div className="content-wrapper">
+        <div className="prompts-sidebar">
+          <h2>Prompts of the Day</h2>
+          {prompts.map((prompt, index) => (
+            <div key={index} className="prompt-card">
+              <h3>{prompt.topic}</h3>
+              <p>{`${prompt.daysRemaining} days remaining`}</p>
+            </div>
+          ))}
+        </div>
+        <div className="post-feed">
+          {loading ? (
+            <p>Loading...</p>
+          ) : (
+            posts.map((post) => <Post key={post._id} post={post} />)
+          )}
+        </div>
       </div>
     </div>
   );
