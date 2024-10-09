@@ -10,24 +10,24 @@ const {
   deleteComment
 } = require('../controllers/commentController');
 
-// @route   POST /api/comments
+// @route   POST /api/posts/:postId/comments
 // @desc    Create a new comment
 // @access  Private
-router.post('/', protect, createComment);
+router.post('/posts/:postId/comments', protect, createComment);
 
 // @route   GET /api/comments/post/:postId
 // @desc    Get all comments for a post
 // @access  Public
-router.get('/post/:postId', getCommentsByPost);
+router.get('/posts/:postId/comments', getCommentsByPost);
 
 // @route   PUT /api/comments/:id
 // @desc    Update a comment
 // @access  Private
-router.put('/:id', protect, updateComment);
+router.put('/comments/:postId', protect, updateComment);
 
 // @route   DELETE /api/comments/:id
 // @desc    Delete a comment
 // @access  Private
-router.delete('/:id', protect, deleteComment);
+router.delete('/comments/:postId', protect, deleteComment);
 
 module.exports = router;
