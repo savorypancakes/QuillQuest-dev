@@ -8,7 +8,12 @@ const TextEditor = forwardRef(({ initialContent, onContentChange, className = ''
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Highlight.configure({ multicolor: true }),
+      Highlight.configure({ 
+        multicolor: true,
+        HTMLAttributes: {
+          class: 'highlight',
+        },
+      }),
     ],
     content: initialContent,
     onUpdate: ({ editor }) => {
