@@ -1,17 +1,9 @@
-// backend/app.js
-
 const express = require('express');
 const cors = require('cors');
-const connectDB = require('./config/database');
 const dotenv = require('dotenv');
-const http = require('http');
-const socketIo = require('socket.io');
 
 // Load environment variables
 dotenv.config();
-
-// Connect to MongoDB
-connectDB();
 
 const app = express();
 
@@ -24,17 +16,28 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const postRoutes = require('./routes/posts');
 const commentRoutes = require('./routes/comments');
+const promptRoutes = require('./routes/prompts');
 
 // Use Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentRoutes);
+app.use('/api/prompts', promptRoutes);
+
+// Add a test route
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'Test route working' });
+});
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Server Error', error: err.message });
+  console.error('Global error handler:', err);
+  res.status(500).json({ 
+    message: 'Server Error', 
+    error: err.message,
+    stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack
+  });
 });
 
 module.exports = app;
