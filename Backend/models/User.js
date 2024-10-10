@@ -23,8 +23,8 @@ const UserSchema = new mongoose.Schema({
     required: true,
     minlength: 6
   },
-  avatar: {
-    type: String, // URL to user avatar
+  profilePic: {
+    type: String, // URL to user profile
     default: ''
   },
   createdAt: {

@@ -5,11 +5,15 @@ const mongoose = require('mongoose');
 const PostSchema = new mongoose.Schema({
 
   
-  // author: {
-  //   type: mongoose.Schema.Types.ObjectId,
-  //   ref: 'User',
-  //   required: true
-  // },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  username: {
+    type: String,
+    required: true
+  },
   title: {
     type: String,
     required: true
@@ -28,10 +32,10 @@ const PostSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  // replies: [{
-  //   type: mongoose.Schema.Types.ObjectId,
-  //   ref: 'Comment'
-  // }]
+  comments: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Comment'
+  }]
 });
 
 module.exports = mongoose.model('Post', PostSchema);

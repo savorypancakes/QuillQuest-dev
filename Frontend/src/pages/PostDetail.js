@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api'; // Ensure this is the correct API service you're using
 import '../assets/css/pages/PostDetail.css'
+import Comment from '../components/Comment';
 
 const PostDetail = () => {
   const { id } = useParams(); // Get the post ID from the URL parameter
@@ -13,6 +14,7 @@ const PostDetail = () => {
   const fetchPost = async () => {
     try {
       const response = await api.get(`/posts/${id}`); // Fetch post by ID
+      console.log('Post data:', response.data); // Log the response data
       setPost(response.data); // Store the post data in state
       setLoading(false); // Set loading to false once data is loaded
     } catch (error) {
@@ -49,6 +51,7 @@ const PostDetail = () => {
 
       <div className="post-meta">
         <small>Posted on: {new Date(post.createdAt).toLocaleString()}</small>
+        <span> by {post.userId?.username || 'Unknown'}</span>
       </div>
 
       <h2 className="post-title">{post.title}</h2>
@@ -60,6 +63,7 @@ const PostDetail = () => {
       <hr className="post-divider" />
 
       {/* Additional post details such as comments can be added here */}
+      <Comment postId={post._id}/>
     </div>
   );
 };

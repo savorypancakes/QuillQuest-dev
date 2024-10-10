@@ -7,7 +7,8 @@ const User = require('../models/User');
 // @access  Private
 exports.getProfile = async (req, res, next) => {
   try {
-    const user = req.user; // From protect middleware
+    const userId = req.user.id;
+    const user = await User.findById(userId); // From protect middleware
     res.json({
       id: user._id,
       username: user.username,

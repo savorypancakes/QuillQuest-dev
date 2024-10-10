@@ -2,6 +2,7 @@
 
 const Post = require('../models/Post');
 const Tag = require('../models/Tag'); // If using a separate Tag model
+const User = require('../models/User');
 const { io } = require('../server'); // To emit events
 
 // @desc    Create a new post
@@ -10,10 +11,17 @@ const { io } = require('../server'); // To emit events
 exports.createPost = async (req, res, next) => {
   const { title, content } = req.body;
   try {
+    // Fetch the user from the database using the userId from the request (auth middleware)
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
     const newPost = new Post({
-      // author: req.user._id,
+      userId: user._id,
+      username: user.username,
       title,
-      content
+      content,
       // , tags
     });
 
@@ -35,7 +43,8 @@ exports.createPost = async (req, res, next) => {
 exports.getPosts = async (req, res, next) => {
   try {
     const posts = await Post.find()
-      .populate('title', 'centent');
+      .populate('title', 'centent')
+      .populate('userId', 'username');
       // .sort({ createdAt: -1 });
     res.json(posts);
   } catch (error) {
@@ -49,11 +58,11 @@ exports.getPosts = async (req, res, next) => {
 exports.getPostById = async (req, res, next) => {
   try {
     const post = await Post.findById(req.params.id)
-      // // .populate('author', 'username avatar')
-      // .populate({
-      //   path: 'replies',
-      //   populate: { path: 'author', select: 'username avatar' }
-      // });
+    // .populate({
+    //   path: 'comments', // Populating comments array
+    //   populate: { path: 'user', select: 'username' } // Populating user data for each comment
+    // })
+    .populate('userId', 'username'); // Populating the post author's data
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
