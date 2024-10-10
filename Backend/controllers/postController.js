@@ -9,9 +9,8 @@ const { io } = require('../server'); // To emit events
 // @route   POST /api/posts
 // @access  Private
 exports.createPost = async (req, res, next) => {
-  const { title, content } = req.body;
+  const { title, content, postType, prompt } = req.body;
   try {
-    // Fetch the user from the database using the userId from the request (auth middleware)
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -22,12 +21,12 @@ exports.createPost = async (req, res, next) => {
       username: user.username,
       title,
       content,
-      // , tags
+      postType,
+      prompt,
     });
 
     const savedPost = await newPost.save();
 
-    // Emit event to notify clients about the new post
     const io = req.app.get('io');
     io.emit('newPost', savedPost);
 
@@ -43,9 +42,9 @@ exports.createPost = async (req, res, next) => {
 exports.getPosts = async (req, res, next) => {
   try {
     const posts = await Post.find()
-      .populate('title', 'centent')
-      .populate('userId', 'username');
-      // .sort({ createdAt: -1 });
+      .populate('userId', 'username')
+      .populate('prompt')
+      .sort({ createdAt: -1 });
     res.json(posts);
   } catch (error) {
     next(error);
@@ -58,11 +57,8 @@ exports.getPosts = async (req, res, next) => {
 exports.getPostById = async (req, res, next) => {
   try {
     const post = await Post.findById(req.params.id)
-    // .populate({
-    //   path: 'comments', // Populating comments array
-    //   populate: { path: 'user', select: 'username' } // Populating user data for each comment
-    // })
-    .populate('userId', 'username'); // Populating the post author's data
+      .populate('userId', 'username')
+      .populate('prompt');
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
@@ -76,20 +72,20 @@ exports.getPostById = async (req, res, next) => {
 // @route   PUT /api/posts/:id
 // @access  Private
 exports.updatePost = async (req, res, next) => {
-  const { content, tags } = req.body;
+  const { content, postType, prompt } = req.body;
   try {
     let post = await Post.findById(req.params.id);
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    // Check if the user is the author
-    if (post.author.toString() !== req.user._id.toString()) {
+    if (post.userId.toString() !== req.user.id) {
       return res.status(401).json({ message: 'Not authorized to update this post' });
     }
 
     post.content = content || post.content;
-    post.tags = tags || post.tags;
+    post.postType = postType || post.postType;
+    post.prompt = prompt || post.prompt;
 
     const updatedPost = await post.save();
 

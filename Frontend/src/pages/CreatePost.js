@@ -14,6 +14,7 @@ const CreatePost = () => {
   const [title, setTitle] = useState('');
   const editorContainerRef = useRef(null);
   const [selectedPrompt, setSelectedPrompt] = useState(null);
+  const [postType, setPostType] = useState('discussion');
 
 
   // Remove this line if you're not using editorWidth
@@ -45,6 +46,10 @@ const CreatePost = () => {
       fetchPrompts();
     }
   }, [prompts]);
+
+  const handlePostTypeSelection = (type) => {
+    setPostType(type);
+  };
 
   const generateOutline = useCallback(async () => {
     if (!title.trim()) {
@@ -387,18 +392,21 @@ const CreatePost = () => {
 
   const handlePost = async () => {
     try {
-
       const token = localStorage.getItem('token');
       
-      const response = await api.post('/posts',
-        { 
-          "title": title, 
-          "content": editorContent, 
-          "createAt": new Date}, {
-          headers: {
-            Authorization: `Bearer ${token}`, // Pass token in Authorization header
-          },
-        });
+      const postData = {
+        title: title,
+        content: editorContent,
+        postType: postType,
+        prompt: selectedPrompt ? selectedPrompt._id : null,
+        createdAt: new Date()
+      };
+
+      const response = await api.post('/posts', postData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       console.log('Post created successfully:', response.data);
       setEditorContent('');
@@ -505,13 +513,26 @@ const CreatePost = () => {
           <div className='flex mt-auto'>
             {/* Post Type Selection Buttons */}
             <div className="w-6/12 inline-flex border-4 border-black-600 rounded-md" role="group">
-              <button type="button" className="text-sm font-medium bg-purple-600 text-white border-4 border-black">
-                Select Post Type
-              </button>
-              <button type="button" className="text-sm font-medium bg-white text-purple-600 border-4 hover:bg-purple-400 hover:text-white">
+              <button 
+                type="button" 
+                className={`text-sm font-medium border-4 ${
+                  postType === 'discussion' 
+                    ? 'bg-purple-600 text-white' 
+                    : 'bg-white text-purple-600 hover:bg-purple-400 hover:text-white'
+                }`}
+                onClick={() => handlePostTypeSelection('discussion')}
+              >
                 Discussion
               </button>
-              <button type="button" className="text-sm font-medium bg-white text-purple-600 border-4 border-purple-600 rounded-md hover:bg-purple-400 hover:text-white">
+              <button 
+                type="button" 
+                className={`text-sm font-medium border-4 ${
+                  postType === 'advice' 
+                    ? 'bg-purple-600 text-white' 
+                    : 'bg-white text-purple-600 hover:bg-purple-400 hover:text-white'
+                }`}
+                onClick={() => handlePostTypeSelection('advice')}
+              >
                 Advice and Feedback
               </button>
             </div>
