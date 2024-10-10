@@ -23,6 +23,10 @@ const PostSchema = new mongoose.Schema({
     required: true
   }
   ,
+  likes: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User' 
+  }],
   // tags: [{
   //   type: String,
   //   lowercase: true,
