@@ -6,7 +6,7 @@ const axios = require('axios');
 const Prompt = require('./models/Prompt');
 const cron = require('node-cron');
 const fs = require('fs');
-const path = require('path')
+const path = require('path');
 
 // Log environment variables
 console.log('Environment variables loaded:');
@@ -21,8 +21,16 @@ connectDB().catch(err => {
   process.exit(1);
 });
 
-// Create server and initialize Socket.io
+// Create server and initialize Socket.io after MongoDB connection is established
 const { server, io } = createServer(app);
+
+// Initialize Socket.io with CORS configuration
+io.on('connection', (socket) => {
+  console.log('New client connected');
+  socket.on('disconnect', () => {
+    console.log('Client disconnected');
+  });
+});
 
 // Make io accessible to other modules if needed
 app.set('io', io);
@@ -58,7 +66,6 @@ const generatePrompt = async () => {
 // Schedule prompt generation to run daily at midnight
 cron.schedule('0 0 * * *', async () => {
   try {
-    // Check if a prompt was already generated today
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const existingPrompt = await Prompt.findOne({ createdAt: { $gte: today } });
@@ -102,11 +109,9 @@ server.listen(PORT, async () => {
   
   if (!fs.existsSync(flagFile)) {
     try {
-      // Delete all existing prompts (only do this once)
       const result = await Prompt.deleteMany({});
       console.log(`All existing prompts have been deleted. Count: ${result.deletedCount}`);
       
-      // Create a flag file to indicate that prompts have been deleted
       fs.writeFileSync(flagFile, 'Prompts were deleted on ' + new Date().toISOString());
     } catch (error) {
       console.error('Error during prompt deletion:', error);
@@ -114,12 +119,9 @@ server.listen(PORT, async () => {
   } else {
     console.log('Prompts have already been deleted in a previous run. Skipping deletion.');
   }
-
-  // No need to generate a new prompt here, it will be generated at midnight
 });
 
 // Error handling for unhandled promises
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  // Application specific logging, throwing an error, or other logic here
 });

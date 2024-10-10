@@ -383,11 +383,19 @@ const CreatePost = () => {
 
   const handlePost = async () => {
     try {
-      const response = await api.post('/posts', { 
-        "title": title, 
-        "content": editorContent, 
-        "createAt": new Date()
-      });
+
+      const token = localStorage.getItem('token');
+      
+      const response = await api.post('/posts',
+        { 
+          "title": title, 
+          "content": editorContent, 
+          "createAt": new Date}, {
+          headers: {
+            Authorization: `Bearer ${token}`, // Pass token in Authorization header
+          },
+        });
+
       console.log('Post created successfully:', response.data);
       setEditorContent('');
       navigate('/home');

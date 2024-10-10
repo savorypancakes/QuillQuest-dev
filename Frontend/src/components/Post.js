@@ -11,7 +11,7 @@ const Post = ({ post }) => {
           <div className="user-icon"></div>
           {/* {post.author.username.charAt(0).toUpperCase()}  */}
           <div className="user-details">
-            {/* <span className="username">{post.author.username}</span> */}
+            <span className="username">{post.username}</span>
             <span className="time">{new Date(post.createdAt).toLocaleString()}</span>
           </div>
         </div>

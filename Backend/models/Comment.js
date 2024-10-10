@@ -1,5 +1,6 @@
 // backend/models/Comment.js
 
+
 const mongoose = require('mongoose');
 
 const CommentSchema = new mongoose.Schema({
@@ -8,10 +9,10 @@ const CommentSchema = new mongoose.Schema({
     ref: 'Post',
     required: true
   },
-  author: {
+  user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    require: true
   },
   content: {
     type: String,

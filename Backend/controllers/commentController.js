@@ -3,11 +3,14 @@
 const Comment = require('../models/Comment');
 const Post = require('../models/Post');
 
+
 // @desc    Create a new comment
 // @route   POST /api/comments
 // @access  Private
 exports.createComment = async (req, res, next) => {
-  const { postId, content, parentCommentId } = req.body;
+  const { content, parentCommentId } = req.body;
+  const { postId } = req.params;
+
   try {
     const post = await Post.findById(postId);
     if (!post) {
@@ -15,8 +18,8 @@ exports.createComment = async (req, res, next) => {
     }
 
     const newComment = new Comment({
-      post: postId,
-      author: req.user._id,
+      post: post._id,
+      userId: req.user._id,
       content,
       parentComment: parentCommentId || null
     });
@@ -26,6 +29,8 @@ exports.createComment = async (req, res, next) => {
     // Add comment to post's replies
     post.replies.push(savedComment._id);
     await post.save();
+
+    
 
     // Emit event to notify clients about the new comment
     const io = req.app.get('io');
@@ -43,7 +48,7 @@ exports.createComment = async (req, res, next) => {
 exports.getCommentsByPost = async (req, res, next) => {
   try {
     const comments = await Comment.find({ post: req.params.postId })
-      .populate('author', 'username avatar')
+      .populate('user', 'username')
       .populate('parentComment')
       .sort({ createdAt: 1 }); // Oldest first
     res.json(comments);
