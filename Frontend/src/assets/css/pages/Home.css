@@ -52,5 +52,10 @@
     padding: 20px;
     overflow-y: auto;
   }
+
+  .prompt-card.expired {
+    opacity: 0.5;
+    background-color: #f0f0f0;
+  }
   
   /* Add any additional styles for your Post component here */

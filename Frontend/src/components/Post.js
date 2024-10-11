@@ -42,24 +42,20 @@ const Post = ({ post }) => {
     }
   };
   return (
+
     <div className='post'>
     <Link to={`/posts/${post._id}`} className='Link'>
-
       <div className="post-header">
         <div className="user-info">
           <div className="user-icon"></div>
-          {/* {post.author.username.charAt(0).toUpperCase()}  */}
           <div className="user-details">
             <span className="username">{post.username}</span>
             <span className="time">{new Date(post.createdAt).toLocaleString()}</span>
           </div>
         </div>
+        {post.postType && <div className="post-type">{post.postType}</div>}
       </div>
-
       <h2 className="post-title">{post.title}</h2>
-
-
-
       <div className="post-content">
         <div className="post-prompt">
         </div>

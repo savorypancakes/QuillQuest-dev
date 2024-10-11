@@ -26,7 +26,13 @@ const Home = () => {
   const fetchPrompts = async () => {
     try {
       const response = await api.get('/prompts/all');
-      setPrompts(response.data);
+      const promptsWithDaysRemaining = response.data.map(prompt => {
+        const now = new Date();
+        const expiresAt = new Date(prompt.expiresAt);
+        const daysRemaining = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24));
+        return { ...prompt, daysRemaining: Math.max(0, daysRemaining) };
+      });
+      setPrompts(promptsWithDaysRemaining);
     } catch (error) {
       console.error('Error fetching prompts:', error);
     }
@@ -44,9 +50,9 @@ const Home = () => {
         <div className="prompts-sidebar">
           <h2>Prompts of the Day</h2>
           {prompts.map((prompt, index) => (
-            <div key={index} className="prompt-card">
+            <div key={index} className={`prompt-card ${prompt.daysRemaining === 0 ? 'expired' : ''}`}>
               <h3>{prompt.topic}</h3>
-              <p>{`${prompt.daysRemaining} days remaining`}</p>
+              <p>{prompt.daysRemaining > 0 ? `${prompt.daysRemaining} days remaining` : 'Expired'}</p>
             </div>
           ))}
         </div>

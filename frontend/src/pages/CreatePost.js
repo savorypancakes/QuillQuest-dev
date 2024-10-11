@@ -13,6 +13,8 @@ const CreatePost = () => {
   const [editorContent, setEditorContent] = useState('');
   const [title, setTitle] = useState('');
   const editorContainerRef = useRef(null);
+  const [selectedPrompt, setSelectedPrompt] = useState(null);
+  const [postType, setPostType] = useState('discussion');
 
 
   // Remove this line if you're not using editorWidth
@@ -29,18 +31,101 @@ const CreatePost = () => {
 
   const [prompts, setPrompts] = useState([]);
 
-  useEffect(() => {
-    const fetchPrompts = async () => {
-      try {
-        const response = await api.get('/prompts/all'); // Remove the extra '/api'
-        setPrompts(response.data);
-      } catch (error) {
-        console.error('Error fetching prompts:', error);
-      }
+  const [showStatistics, setShowStatistics] = useState(false);
+
+  const calculateTextStatistics = (text, errorCount) => {
+    // Helper function to count syllables in a word
+    const countSyllables = (word) => {
+        word = word.toLowerCase();
+        if (word.length <= 3) return 1; // Words of length <= 3 usually have one syllable
+        word = word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, ''); // Remove silent 'e'
+        word = word.replace(/^y/, ''); // Remove starting 'y'
+        const syllableMatches = word.match(/[aeiouy]{1,2}/g); // Count vowel groups
+        return syllableMatches ? syllableMatches.length : 1;
     };
+    
+    // Remove HTML tags and trim the text
+    const cleanText = text.replace(/<[^>]*>/g, '').trim();
+    
+    const characters = cleanText.length;
+    const wordsArray = cleanText.split(/\s+/).filter(word => word.length > 0);
+    const words = wordsArray.length;
+    const sentences = cleanText.split(/[.!?]+/).filter(sentence => sentence.trim().length > 0).length;
+    
+    const averageWordLength = words > 0 ? (characters / words) : 0;
+    const averageSentenceLength = sentences > 0 ? (words / sentences) : 0;
+
+    // Count total syllables
+    const syllables = wordsArray.reduce((total, word) => total + countSyllables(word), 0);
+    
+    // Flesch-Kincaid Grade Level calculation
+    const gradeLevel = sentences > 0 && words > 0
+      ? 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59
+      : 0;
+    
+    // Interpret the grade level
+    let readabilityLevel;
+    if (gradeLevel <= 5) readabilityLevel = "5th grade (Very easy to read)";
+    else if (gradeLevel <= 8) readabilityLevel = "8th grade (Easy to read)";
+    else if (gradeLevel <= 12) readabilityLevel = "12th grade (Fairly difficult to read)";
+    else if (gradeLevel <= 16) readabilityLevel = "College level (Difficult to read)";
+    else readabilityLevel = "Graduate level (Very difficult to read)";
   
-    fetchPrompts();
-  }, []);
+    return {
+      characters,
+      words,
+      sentences,
+      averageWordLength: averageWordLength.toFixed(1),
+      averageSentenceLength: averageSentenceLength.toFixed(1),
+      syllables,
+      gradeLevel: gradeLevel.toFixed(1),
+      readabilityLevel,
+      errorCount: errorCount || 0
+    };
+};
+
+  
+  const [textStatistics, setTextStatistics] = useState(calculateTextStatistics(''));
+
+  useEffect(() => {
+    setTextStatistics(calculateTextStatistics(editorContent, errors.length));
+  }, [editorContent, errors]);
+  
+
+  const toggleStatistics = () => {
+    setShowStatistics(!showStatistics);
+  };
+
+  const TextStatistics = ({ statistics }) => (
+    <div className="bg-white p-4 rounded-lg shadow-md">
+      <h3 className="text-lg font-bold mb-2">Text Statistics</h3>
+      <p>Characters: {statistics.characters}</p>
+      <p>Words: {statistics.words}</p>
+      <p>Sentences: {statistics.sentences}</p>
+      <p>Average Word Length: {statistics.averageWordLength} characters</p>
+      <p>Average Sentence Length: {statistics.averageSentenceLength} words</p>
+      <p>Readability: Grade {statistics.gradeLevel} ({statistics.readabilityLevel})</p>
+      <p>Errors Found: {statistics.errorCount}</p>
+    </div>
+  );
+
+  useEffect(() => {
+    if (prompts.length === 0) {
+      const fetchPrompts = async () => {
+        try {
+          const response = await api.get('/prompts/all');
+          setPrompts(response.data);
+        } catch (error) {
+          console.error('Error fetching prompts:', error);
+        }
+      };
+      fetchPrompts();
+    }
+  }, [prompts]);
+
+  const handlePostTypeSelection = (type) => {
+    setPostType(type);
+  };
 
   const generateOutline = useCallback(async () => {
     if (!title.trim()) {
@@ -199,6 +284,25 @@ const CreatePost = () => {
     }
   }, [title, editorContent]);
 
+  const findTextPosition = (doc, text) => {
+    let from = -1;
+    let to = -1;
+    const regex = new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+    
+    doc.descendants((node, pos) => {
+      if (node.isText) {
+        let match;
+        while ((match = regex.exec(node.text)) !== null) {
+          from = pos + match.index;
+          to = from + match[0].length;
+          return false; // Stop at the first match
+        }
+      }
+    });
+    
+    return { from, to };
+  };
+
   const checkForErrors = useCallback(async () => {
     if (!editorContent.trim() || isChecking) return;
   
@@ -215,48 +319,44 @@ const CreatePost = () => {
         apiKey: apiKey,
         model: "llama3-8b-8192",
         temperature: 0,
-        maxTokens: 1000,
+        maxTokens: 3000,
         maxRetries: 2,
       });
-  
-      // Strip HTML tags for LLM analysis
-      const plainTextContent = editorContent.replace(/<[^>]*>/g, '');
   
       console.log("Sending request to LLM...");
   
       const aiMsg = await llm.invoke([
         {
           role: "system",
-          content: `You are an expert proofreader. Your task is to identify grammatical errors, spelling mistakes, and suggest improvements in the given text. Focus on clear issues, not stylistic preferences. Be thorough and report even minor errors. Provide your response in the following format:
-  
-          Error 1:
-          - Text: [erroneous text]
-          - Message: [description of the error and suggestion]
-          - Suggestion: [corrected text]
-  
-          Error 2:
-          - Text: [erroneous text]
-          - Message: [description of the error and suggestion]
-          - Suggestion: [corrected text]
-  
-          If no errors are found, respond with "No errors found."`,
+          content: `You are an expert proofreader and editor with a keen eye for detail. Your task is to perform an exhaustive check of the given text, identifying EVERY SINGLE issue including but not limited to:
+          1. Spelling errors (pay extra attention to commonly misspelled words)
+          2. Grammatical mistakes
+          3. Punctuation errors
+          4. Sentence structure problems
+          5. Clarity and coherence issues
+          6. Redundancy or wordiness
+          7. Inconsistencies in tense or voice
+          8. Improper word choice
+          Be extremely thorough and identify every single error, no matter how minor. Do not overlook any misspellings, even if they might be proper nouns. For each issue, provide:
+          - 'text': the exact problematic text (word, phrase, or complete sentence including punctuation)
+          - 'message': detailed description of the error and suggestion for improvement
+          - 'suggestion': the corrected text
+          Provide your response in JSON format with an array of objects. If no errors are found, return an empty array. Always return a valid JSON array.`,
         },
-        { role: "user", content: plainTextContent },
+        { role: "user", content: editorContent },
       ]);
   
       console.log("Raw LLM response:", aiMsg.content);
   
-      let parsedErrors = [];
-      if (aiMsg.content.trim() !== "No errors found.") {
-        const errorRegex = /Error \d+:\n- Text: (.*)\n- Message: (.*)\n- Suggestion: (.*)/g;
-        let match;
-        while ((match = errorRegex.exec(aiMsg.content)) !== null) {
-          parsedErrors.push({
-            text: match[1],
-            message: match[2],
-            suggestion: match[3]
-          });
+      let parsedErrors;
+      try {
+        parsedErrors = JSON.parse(aiMsg.content);
+        if (!Array.isArray(parsedErrors)) {
+          throw new Error("Parsed result is not an array");
         }
+      } catch (parseError) {
+        console.error("Error parsing LLM response:", parseError);
+        parsedErrors = [];
       }
   
       console.log("Parsed errors:", parsedErrors);
@@ -265,29 +365,12 @@ const CreatePost = () => {
         const editor = editorRef.current.editor;
         
         // Clear previous highlights
-        editor.chain().focus().unsetMark('highlight').run();
-        
-        // Custom function to find text position
-        const findTextPosition = (doc, text) => {
-          let from = 0;
-          let to = 0;
-          doc.descendants((node, pos) => {
-            if (node.isText) {
-              const index = node.text.indexOf(text);
-              if (index !== -1) {
-                from = pos + index;
-                to = from + text.length;
-                return false; // Stop searching
-              }
-            }
-          });
-          return { from, to };
-        };
+        editor.chain().focus().unsetAllMarks().run();
         
         // Apply new highlights
         parsedErrors.forEach(error => {
           const { from, to } = findTextPosition(editor.state.doc, error.text);
-          if (from !== to) {
+          if (from !== -1 && to !== -1) {
             editor.chain()
               .focus()
               .setTextSelection({ from, to })
@@ -313,32 +396,15 @@ const CreatePost = () => {
       setIsChecking(false);
     }
   }, [editorContent, isChecking]);
-
+  
   const handleErrorFix = useCallback((index) => {
     const error = errors[index];
     if (!error || !editorRef.current || !editorRef.current.editor) return;
   
     const editor = editorRef.current.editor;
     
-    // Custom function to find text position
-    const findTextPosition = (doc, text) => {
-      let from = 0;
-      let to = 0;
-      doc.descendants((node, pos) => {
-        if (node.isText) {
-          const index = node.text.indexOf(text);
-          if (index !== -1) {
-            from = pos + index;
-            to = from + text.length;
-            return false; // Stop searching
-          }
-        }
-      });
-      return { from, to };
-    };
-  
     const { from, to } = findTextPosition(editor.state.doc, error.text);
-    if (from !== to) {
+    if (from !== -1 && to !== -1) {
       editor
         .chain()
         .focus()
@@ -373,7 +439,7 @@ const CreatePost = () => {
 
   // Function to handle prompt selection
   const handlePromptSelect = (prompt) => {
-    setTitle(prompt.topic);
+    setSelectedPrompt(prompt);
     toggleDropdown();
   };
 
@@ -383,18 +449,21 @@ const CreatePost = () => {
 
   const handlePost = async () => {
     try {
-
       const token = localStorage.getItem('token');
       
-      const response = await api.post('/posts',
-        { 
-          "title": title, 
-          "content": editorContent, 
-          "createAt": new Date}, {
-          headers: {
-            Authorization: `Bearer ${token}`, // Pass token in Authorization header
-          },
-        });
+      const postData = {
+        title: title,
+        content: editorContent,
+        postType: postType,
+        prompt: selectedPrompt ? selectedPrompt._id : null,
+        createdAt: new Date()
+      };
+
+      const response = await api.post('/posts', postData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       console.log('Post created successfully:', response.data);
       setEditorContent('');
@@ -501,28 +570,41 @@ const CreatePost = () => {
           <div className='flex mt-auto'>
             {/* Post Type Selection Buttons */}
             <div className="w-6/12 inline-flex border-4 border-black-600 rounded-md" role="group">
-              <button type="button" className="text-sm font-medium bg-purple-600 text-white border-4 border-black">
-                Select Post Type
-              </button>
-              <button type="button" className="text-sm font-medium bg-white text-purple-600 border-4 hover:bg-purple-400 hover:text-white">
+              <button 
+                type="button" 
+                className={`text-sm font-medium border-4 ${
+                  postType === 'discussion' 
+                    ? 'bg-purple-600 text-white' 
+                    : 'bg-white text-purple-600 hover:bg-purple-400 hover:text-white'
+                }`}
+                onClick={() => handlePostTypeSelection('discussion')}
+              >
                 Discussion
               </button>
-              <button type="button" className="text-sm font-medium bg-white text-purple-600 border-4 border-purple-600 rounded-md hover:bg-purple-400 hover:text-white">
+              <button 
+                type="button" 
+                className={`text-sm font-medium border-4 ${
+                  postType === 'advice' 
+                    ? 'bg-purple-600 text-white' 
+                    : 'bg-white text-purple-600 hover:bg-purple-400 hover:text-white'
+                }`}
+                onClick={() => handlePostTypeSelection('advice')}
+              >
                 Advice and Feedback
               </button>
             </div>
             {/* Dropdown Menu */}
             <div className='flex-grow text-right relative'> 
-              <button 
-                onClick={toggleDropdown}
-                className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center" 
-                type="button"
-              >
-                Select Prompt
-                <svg className="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
-                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 4 4 4-4"/>
-                </svg>
-              </button>
+            <button 
+              onClick={toggleDropdown}
+              className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center" 
+              type="button"
+            >
+              {selectedPrompt ? selectedPrompt.topic : "Select Prompt"}
+              <svg className="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 4 4 4-4"/>
+              </svg>
+            </button>
 
               {dropdownOpen && (
                 <div className="absolute right-0 bottom-full mb-2 z-10 bg-white divide-y divide-gray-100 rounded-lg shadow w-64 max-h-60 overflow-y-auto">
@@ -608,6 +690,17 @@ const CreatePost = () => {
               Suggest
             </button>
           </div>
+          {/* Dashboard */}
+          <div className="flex items-center justify-between">
+            <p>Text Statistics</p>
+            <button 
+              onClick={toggleStatistics}
+              className="btn hover:bg-purple-400 w-auto text-sm px-2 py-1"
+            >
+              {showStatistics ? 'Hide' : 'Show'} Statistics
+            </button>
+          </div>
+          {showStatistics && <TextStatistics statistics={textStatistics} />}
           {/* Error Correction Section */}
           <div className="mt-4">
             <h3 className="font-bold mb-2">Error Correction</h3>

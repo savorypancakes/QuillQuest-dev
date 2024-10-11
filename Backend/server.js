@@ -55,6 +55,13 @@ const generatePrompt = async () => {
         "Content-Type": "application/json"
       }
     });
+
+    const newPrompt = new Prompt({ 
+      topic: newPromptTopic,
+      expiresAt: new Date(+new Date() + 7*24*60*60*1000) // 7 days from now
+    });
+    await newPrompt.save();
+    
     console.log('Received response from GROQ API');
     return response.data.choices[0].message.content.trim();
   } catch (error) {
@@ -89,6 +96,16 @@ cron.schedule('0 0 * * *', async () => {
     }
   } catch (error) {
     console.error('Error in prompt generation cycle:', error);
+  }
+});
+
+// Add this near your other cron jobs
+cron.schedule('0 0 * * *', async () => {
+  try {
+    const result = await Prompt.deleteMany({ expiresAt: { $lt: new Date() } });
+    console.log(`Deleted ${result.deletedCount} expired prompts`);
+  } catch (error) {
+    console.error('Error deleting expired prompts:', error);
   }
 });
 
