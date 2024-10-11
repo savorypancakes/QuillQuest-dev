@@ -1,10 +1,6 @@
-// backend/models/Post.js
-
 const mongoose = require('mongoose');
 
 const PostSchema = new mongoose.Schema({
-
-  
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -21,13 +17,16 @@ const PostSchema = new mongoose.Schema({
   content: {
     type: String,
     required: true
-  }
-  ,
-  // tags: [{
-  //   type: String,
-  //   lowercase: true,
-  //   trim: true
-  // }],
+  },
+  postType: {
+    type: String,
+    enum: ['discussion', 'advice'],
+    required: true
+  },
+  prompt: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Prompt'
+  },
   createdAt: {
     type: Date,
     default: Date.now
