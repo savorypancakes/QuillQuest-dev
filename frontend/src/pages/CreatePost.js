@@ -34,19 +34,33 @@ const CreatePost = () => {
   const [showStatistics, setShowStatistics] = useState(false);
 
   const calculateTextStatistics = (text, errorCount) => {
+    // Helper function to count syllables in a word
+    const countSyllables = (word) => {
+        word = word.toLowerCase();
+        if (word.length <= 3) return 1; // Words of length <= 3 usually have one syllable
+        word = word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, ''); // Remove silent 'e'
+        word = word.replace(/^y/, ''); // Remove starting 'y'
+        const syllableMatches = word.match(/[aeiouy]{1,2}/g); // Count vowel groups
+        return syllableMatches ? syllableMatches.length : 1;
+    };
+    
     // Remove HTML tags and trim the text
     const cleanText = text.replace(/<[^>]*>/g, '').trim();
     
     const characters = cleanText.length;
-    const words = cleanText.split(/\s+/).filter(word => word.length > 0).length;
+    const wordsArray = cleanText.split(/\s+/).filter(word => word.length > 0);
+    const words = wordsArray.length;
     const sentences = cleanText.split(/[.!?]+/).filter(sentence => sentence.trim().length > 0).length;
     
     const averageWordLength = words > 0 ? (characters / words) : 0;
     const averageSentenceLength = sentences > 0 ? (words / sentences) : 0;
+
+    // Count total syllables
+    const syllables = wordsArray.reduce((total, word) => total + countSyllables(word), 0);
     
     // Flesch-Kincaid Grade Level calculation
     const gradeLevel = sentences > 0 && words > 0
-      ? 0.39 * (words / sentences) + 11.8 * (characters / words) - 15.59
+      ? 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59
       : 0;
     
     // Interpret the grade level
@@ -63,11 +77,13 @@ const CreatePost = () => {
       sentences,
       averageWordLength: averageWordLength.toFixed(1),
       averageSentenceLength: averageSentenceLength.toFixed(1),
+      syllables,
       gradeLevel: gradeLevel.toFixed(1),
       readabilityLevel,
       errorCount: errorCount || 0
     };
-  };
+};
+
   
   const [textStatistics, setTextStatistics] = useState(calculateTextStatistics(''));
 
