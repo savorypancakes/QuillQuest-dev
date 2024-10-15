@@ -16,7 +16,7 @@ const Comment = ({ postId }) => {
     const fetchComments = async () => {
       try {
         setLoading(true);
-        const response = await api.get(`/posts/${postId}/comments`, {
+        const response = await api.get(`/comments/posts/${postId}/comments`, {
           headers: {
             Authorization: `Bearer ${auth.token}`, // Pass token in Authorization header
           },
@@ -44,7 +44,7 @@ const Comment = ({ postId }) => {
     try {
       setLoading(true);
       const response = await api.post(
-        `/posts/${postId}/comments`,
+        `/comments/posts/${postId}/comments`,
         { content: newComment },
         {
           headers: {
@@ -93,7 +93,7 @@ const Comment = ({ postId }) => {
         {comments.length > 0 ? (
           comments.map((comment) => (
             <div key={comment._id} className="comment-item p-2 bg-gray-100 rounded-md">
-              <p className="font-semibold">{comment.user.username}</p>
+              <p className="font-semibold">{comment.userId?.username}</p>
               <p>{comment.content}</p>
               <p className="text-xs text-gray-500">{new Date(comment.createdAt).toLocaleString()}</p>
             </div>

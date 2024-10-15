@@ -23,7 +23,6 @@ const PostSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User' 
   }],
-  },
   postType: {
     type: String,
     enum: ['discussion', 'advice'],

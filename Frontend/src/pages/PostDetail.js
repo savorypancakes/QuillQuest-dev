@@ -53,7 +53,9 @@ const PostDetail = () => {
       console.log('Post data:', response.data); // Log the response data
       setPost(response.data); // Store the post data in state
       setLikes(response.data.likes.length); // Set initial number of likes
-      setHasLiked(response.data.likes.includes(auth.user.id)); // Check if the current user has liked the post
+      if (response.data.likes && auth.user) {
+        setHasLiked(response.data.likes.includes(auth.user.id));
+      }      
       setComments(response.data.comments.length);
       setLoading(false); // Set loading to false once data is loaded
     } catch (error) {
@@ -66,7 +68,9 @@ const PostDetail = () => {
 
   // UseEffect to run the fetch function when the component is mounted or when the ID changes
   useEffect(() => {
-    fetchPost();
+    if (id) {
+      fetchPost();
+    }
   }, [id]);
 
   // Loading state

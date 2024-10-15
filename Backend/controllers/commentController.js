@@ -27,7 +27,7 @@ exports.createComment = async (req, res, next) => {
     const savedComment = await newComment.save();
 
     // Add comment to post's replies
-    post.replies.push(savedComment._id);
+    post.comments.push(savedComment._id);
     await post.save();
 
     
@@ -48,7 +48,7 @@ exports.createComment = async (req, res, next) => {
 exports.getCommentsByPost = async (req, res, next) => {
   try {
     const comments = await Comment.find({ post: req.params.postId })
-      .populate('user', 'username')
+      .populate('userId', 'username')
       .populate('parentComment')
       .sort({ createdAt: 1 }); // Oldest first
     res.json(comments);
@@ -94,9 +94,14 @@ exports.deleteComment = async (req, res, next) => {
     }
 
     // Check if the user is the author
-    if (comment.author.toString() !== req.user._id.toString()) {
+    if (comment.userId.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: 'Not authorized to delete this comment' });
     }
+
+    // Remove comment from post's comments array
+    await Post.findByIdAndUpdate(comment.post, {
+      $pull: { comments: comment._id }
+    });
 
     await comment.remove();
 
