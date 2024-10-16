@@ -17,6 +17,7 @@ const userRoutes = require('./routes/users');
 const postRoutes = require('./routes/posts');
 const commentRoutes = require('./routes/comments');
 const promptRoutes = require('./routes/prompts');
+const replyRoutes = require('./routes/replies');
 
 // Use Routes
 app.use('/api/auth', authRoutes);
@@ -24,6 +25,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/prompts', promptRoutes);
+app.use('/api', replyRoutes);
 
 // Add a test route
 app.get('/api/test', (req, res) => {

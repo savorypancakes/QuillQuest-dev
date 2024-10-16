@@ -3,10 +3,13 @@ import { useParams, Link } from 'react-router-dom';
 import api from '../services/api'; // Ensure this is the correct API service you're using
 import '../assets/css/pages/PostDetail.css'
 import Comment from '../components/Comment';
+import Reply from '../components/Reply';
 import { AuthContext } from '../context/AuthContext';
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
 const PostDetail = () => {
   const { id } = useParams(); // Get the post ID from the URL parameter
@@ -17,7 +20,9 @@ const PostDetail = () => {
   const [likes, setLikes] = useState(0); // Check post's liked
   const [hasLiked, setHasLiked] = useState(false); // Check if user already liked the post
   const [comments, setComments] = useState(0);
-  // // Function to like a post
+  const [showReplies, setShowReplies] = useState({});
+
+  // Function to like a post
   const handleLike = async () => {
     try {
       const response = await api.put(`/posts/${post._id}/like`, {}, {
@@ -32,7 +37,7 @@ const PostDetail = () => {
     }
   };
 
-  // // Function to unlike a post
+  // Function to unlike a post
   const handleUnlike = async () => {
     try {
       const response = await api.put(`/posts/${post._id}/unlike`, {}, {
@@ -46,6 +51,7 @@ const PostDetail = () => {
       console.error('Error unliking the post:', err);
     }
   };
+
   // Function to fetch the post details from the backend
   const fetchPost = async () => {
     try {
@@ -53,9 +59,7 @@ const PostDetail = () => {
       console.log('Post data:', response.data); // Log the response data
       setPost(response.data); // Store the post data in state
       setLikes(response.data.likes.length); // Set initial number of likes
-      if (response.data.likes && auth.user) {
-        setHasLiked(response.data.likes.includes(auth.user.id));
-      }      
+      setHasLiked(response.data.likes.includes(auth.user.id)); // Check if the current user has liked the post
       setComments(response.data.comments.length);
       setLoading(false); // Set loading to false once data is loaded
     } catch (error) {
@@ -63,16 +67,15 @@ const PostDetail = () => {
       setError('Failed to load the post');
       setLoading(false); // Set loading to false in case of an error
     }
-    
   };
 
   // UseEffect to run the fetch function when the component is mounted or when the ID changes
   useEffect(() => {
-    if (id) {
-      fetchPost();
-    }
+    fetchPost();
   }, [id]);
 
+  // Function to toggle replies visibility for a comment
+  
   // Loading state
   if (loading) {
     return <p>Loading post...</p>;
@@ -106,20 +109,22 @@ const PostDetail = () => {
 
       <hr className="post-divider" />
       <div className="LikeCounter">
-      <span>
-        {hasLiked ? (
-          <ThumbUpAltIcon onClick={handleUnlike} className="unlike-button"/>
-        ) : (
-          <ThumbUpOffAltIcon onClick={handleLike} className="like-button"/>
-        )}
-        {likes}
-        <ChatBubbleOutlineIcon className="comment-button"/>
-        {comments}
+        <span>
+          {hasLiked ? (
+            <ThumbUpAltIcon onClick={handleUnlike} className="unlike-button" />
+          ) : (
+            <ThumbUpOffAltIcon onClick={handleLike} className="like-button" />
+          )}
+          {likes}
+          <ChatBubbleOutlineIcon className="comment-button" />
+          {comments}
         </span>
       </div>
+
+      {/* Comments Section */}
+      <Comment postId={post._id} />
+
       
-      {/* Additional post details such as comments can be added here */}
-      <Comment postId={post._id}/>
     </div>
   );
 };

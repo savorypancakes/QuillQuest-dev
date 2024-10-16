@@ -51,13 +51,15 @@ const Post = ({ post }) => {
           <div className="user-details">
             <span className="username">{post.username}</span>
             <span className="time">{new Date(post.createdAt).toLocaleString()}</span>
+            
           </div>
         </div>
-        {post.postType && <div className="post-type">{post.postType}</div>}
+        
       </div>
       <h2 className="post-title">{post.title}</h2>
       <div className="post-content">
         <div className="post-prompt">
+          {post.postType && <div className="post-type">{post.postType}</div>}
         </div>
         <p>{post.content}</p>
       </div>
