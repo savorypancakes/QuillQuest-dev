@@ -1,11 +1,11 @@
 import React, { useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import '../assets/css/components/Post.css';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import '../assets/css/index.css'
 
 const Post = ({ post }) => {
   const { auth } = useContext(AuthContext);
@@ -43,37 +43,37 @@ const Post = ({ post }) => {
   };
   return (
 
-    <div className='post'>
-    <Link to={`/posts/${post._id}`} className='Link'>
-      <div className="post-header">
-        <div className="user-info">
-          <div className="user-icon"></div>
-          <div className="user-details">
-            <span className="username">{post.username}</span>
-            <span className="time">{new Date(post.createdAt).toLocaleString()}</span>
+    <div className='rounded-[10px] bg-[white] shadow-[0_2px_8px_rgba(0,0,0,0.1)] w-[90%] max-w-[800px] mb-5 p-5 ;'>
+    <Link to={`/posts/${post._id}`} className='hover:no-underline'>
+      <div className="flex items-center mb-[15px]">
+        <div className="flex">
+          <div className="bg-[#9500F0] text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]"></div>
+          <div className="flex flex-col items-baseline">
+            <span className="font-semibold text-black">{post.username}</span>
+            <span className="text-[gray] text-[0.85rem]">{new Date(post.createdAt).toLocaleString()}</span>
             
           </div>
         </div>
         
       </div>
-      <h2 className="post-title">{post.title}</h2>
-      <div className="post-content">
-        <div className="post-prompt">
-          {post.postType && <div className="post-type">{post.postType}</div>}
+      <h2 className="text-black font-bold text-2xl text-left mt-0 mb-[15px] mx-0">{post.title}</h2>
+      <div className="text-base leading-normal text-[#333]">
+        <div className="flex mb-2.5">
+          {post.postType && <div className="bg-[#9500F0] text-white text-[0.9rem] inline-block px-4 py-1 rounded-[1rem]">{post.postType}</div>}
         </div>
-        <p>{post.content}</p>
+        <div dangerouslySetInnerHTML={{ __html: post.content }} />
       </div>
     </Link>
 
-      <div className="post-footer">
+      <div className="flex justify-between mt-5">
       <span>
         {hasLiked ? (
-          <ThumbUpAltIcon onClick={handleUnlike} className="unlike-button"/>
+          <ThumbUpAltIcon onClick={handleUnlike} className="bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline"/>
         ) : (
-          <ThumbUpOffAltIcon onClick={handleLike} className="like-button"/>
+          <ThumbUpOffAltIcon onClick={handleLike} className="bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline"/>
         )}
         {likes}
-        <Link to={`/posts/${post._id}`}><ChatBubbleOutlineIcon className="comment-button"/></Link>{comments}
+        <Link to={`/posts/${post._id}`}><ChatBubbleOutlineIcon className="bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline"/></Link>{comments}
         </span>
         
       </div>

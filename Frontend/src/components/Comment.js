@@ -8,6 +8,8 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import '../assets/css/index.css';
 
 const Comment = ({ postId }) => {
   const { auth } = useContext(AuthContext); // Access auth context for user and token
@@ -115,56 +117,6 @@ const Comment = ({ postId }) => {
 
       {/* Display error if any */}
       {error && <p className="text-red-500">{error}</p>}
-
-      {/* Comment List */}
-      <div className="comment-list space-y-4 mb-4">
-        {loading && <p>Loading comments...</p>}
-        {comments.length > 0 ? (
-          comments.map((comment) => (
-            <div key={comment._id} className="comment-item p-2 bg-gray-100 rounded-md">
-              <p className="font-semibold">{comment.userId?.username}</p>
-              <p>{comment.content}</p>
-              <p className="text-xs text-gray-500">{new Date(comment.createdAt).toLocaleString()}</p>
-
-              <div className="like-section mt-2">
-                {comment.likes.includes(auth.user.id) ? (
-                  <ThumbUpAltIcon
-                    onClick={() => handleUnlikeComment(comment._id)}
-                    className="unlike-button cursor-pointer"
-                  />
-                ) : (
-                  <ThumbUpOffAltIcon
-                    onClick={() => handleLikeComment(comment._id)}
-                    className="like-button cursor-pointer"
-                  />
-                )}
-                <span>{comment.likes.length}</span>
-              </div>
-
-              <button
-                className="toggle-replies-button mt-2"
-                onClick={() => toggleReplies(comment._id)}
-              >
-                {showReplies[comment._id] ? (
-                  <ExpandLessIcon />
-                ) : (
-                  <ExpandMoreIcon />
-                )}
-                {showReplies[comment._id] ? ' Hide Replies' : ' Show Replies'}
-              </button>
-
-              {showReplies[comment._id] && (
-                <div className="replies-section mt-2">
-                  <Reply commentId={comment._id} />
-                </div>
-              )}
-            </div>
-          ))
-        ) : (
-          <p>No comments yet. Be the first to comment!</p>
-        )}
-      </div>
-
       {/* New Comment Form */}
       <form onSubmit={handleCommentSubmit} className="mb-4">
         <textarea
@@ -176,12 +128,71 @@ const Comment = ({ postId }) => {
         />
         <button
           type="submit"
-          className="mt-2 px-4 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          className="w-auto mt-2 px-4 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600"
           disabled={loading}
         >
           {loading ? 'Posting...' : 'Post Comment'}
         </button>
       </form>
+      {/* Comment List */}
+      
+      <div className="comment-list space-y-4 mb-4">
+        {loading && <p>Loading comments...</p>}
+        {comments.length > 0 ? (
+          comments.map((comment) => (
+            <div key={comment._id} className="flex flex-col p-2 bg-[transparent] rounded-md">
+              <div className='flex mt-3'>
+                <div className="ml-3 bg-[#9500F0] text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]"></div>
+                <div className='flex flex-col items-baseline'>
+                  <p className="font-semibold">{comment.userId?.username}</p>
+                  <p className="text-xs text-gray-500">{new Date(comment.createdAt).toLocaleString()}</p>
+                  <p className='mt-5'>{comment.content}</p>
+                </div>
+                
+              </div>
+              
+
+              <div className="flex">
+                {comment.likes.includes(auth.user.id) ? (
+                  <ThumbUpAltIcon
+                    onClick={() => handleUnlikeComment(comment._id)}
+                    className="bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline"
+                  />
+                ) : (
+                  <ThumbUpOffAltIcon
+                    onClick={() => handleLikeComment(comment._id)}
+                    className="bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline"
+                  />
+                )}
+                <span className='mt-5 mr-5'>{comment.likes.length}</span>
+                <button
+                  className="w-auto h-auto p-0 m-0 bg-[transparent] text-black text-sm"
+                  onClick={() => toggleReplies(comment._id)}
+                >
+                  {showReplies[comment._id] ? (
+                    <ExpandMoreIcon />
+                  ) : (
+                    <ChatBubbleOutlineIcon  className='w-auto bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline'/>
+                  )}
+                  {showReplies[comment._id] ? ' Collapse' : ''}
+                </button>
+              </div>
+
+
+
+              {showReplies[comment._id] && (
+                <div className="flex flex-col">
+                  <Reply commentId={comment._id} />
+                </div>
+              )}
+            </div>
+          ))
+        ) : (
+          <p>No comments yet. Be the first to comment!</p>
+        )}
+      </div>
+
+
     </div>
   );
 };

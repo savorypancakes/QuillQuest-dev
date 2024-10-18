@@ -74,10 +74,17 @@ const Reply = ({ commentId }) => {
                 {loading && <p>Loading replies...</p>}
                 {replies.length > 0 ? (
                     replies.map((reply) => (
-                        <div key={reply._id} className="reply-item p-2 bg-gray-100 rounded-md">
-                            <p className="font-semibold">{reply.userId?.username}</p>
-                            <p>{reply.content}</p>
-                            <p className="text-xs text-gray-500">{new Date(reply.createdAt).toLocaleString()}</p>
+                        <div key={reply._id} className="reply-item p-2 bg-[transparent] rounded-md">
+                            <div className='flex mt-0'>
+                            <div className="ml-3 bg-[#9500F0] text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]"></div>
+                                <div className='flex flex-col items-baseline'>
+                                <p className="font-semibold">{reply.userId?.username}</p>
+                                <p className="text-xs text-gray-500">{new Date(reply.createdAt).toLocaleString()}</p>
+                                <p>{reply.content}</p>
+                                </div>
+                                
+                            </div>
+                            
                         </div>
                     ))
                 ) : (
@@ -87,19 +94,22 @@ const Reply = ({ commentId }) => {
             {/* New Reply Form */}
             <form onSubmit={handleReplySubmit} className="mb-4 mt-4">
                 <textarea
-                    className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
                     rows="2"
                     value={newReply}
                     onChange={(e) => setNewReply(e.target.value)}
                     placeholder="Add your reply..."
                 />
-                <button
+                <div className='flex'>
+                    <button
                     type="submit"
-                    className="mt-2 px-4 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                    className="w-auto mt-2 px-4 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600"
                     disabled={loading}
                 >
                     {loading ? 'Posting...' : 'Post Reply'}
                 </button>
+                </div>
+                
             </form>
 
 

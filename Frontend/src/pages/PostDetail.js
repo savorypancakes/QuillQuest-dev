@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api'; // Ensure this is the correct API service you're using
-import '../assets/css/pages/PostDetail.css'
 import Comment from '../components/Comment';
 import Reply from '../components/Reply';
 import { AuthContext } from '../context/AuthContext';
@@ -10,6 +9,8 @@ import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import '../assets/css/index.css';
+import Navbar from '../components/Navbar';
 
 const PostDetail = () => {
   const { id } = useParams(); // Get the post ID from the URL parameter
@@ -93,34 +94,38 @@ const PostDetail = () => {
 
   // Display the post details
   return (
-    <div className="post-detail-container">
+    <div className="flex flex-col bg-[transparent] mx-[20%] pt-20 pb-5 px-5">
+      <Navbar/>
       <Link to="/home" className="back-link">← Back to Home</Link>
+      <div className='flex'>
+        <div className="bg-[#9500F0] text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]"></div>
+        <div className="flex flex-col items-baseline">
+        <span className='font-semibold text-black'> {post.userId?.username || 'Unknown'}</span>
+        <span className='text-[gray] text-[0.85rem]'>Posted on: {new Date(post.createdAt).toLocaleString()}</span>
+      </div>
+      </div>
+      
 
-      <div className="post-meta">
-        <small>Posted on: {new Date(post.createdAt).toLocaleString()}</small>
-        <span> by {post.userId?.username || 'Unknown'}</span>
+      <h2 className="text-black font-bold text-2xl text-left mt-5 mb-[15px] mx-0">{post.title}</h2>
+
+      <div className="pb-5">
+      <div dangerouslySetInnerHTML={{ __html: post.content }} />
       </div>
 
-      <h2 className="post-title">{post.title}</h2>
-
-      <div className="post-content">
-        <p>{post.content}</p>
-      </div>
-
-      <hr className="post-divider" />
-      <div className="LikeCounter">
+      
+      <div className="flex justify-between">
         <span>
           {hasLiked ? (
-            <ThumbUpAltIcon onClick={handleUnlike} className="unlike-button" />
+            <ThumbUpAltIcon onClick={handleUnlike} className="bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline" />
           ) : (
-            <ThumbUpOffAltIcon onClick={handleLike} className="like-button" />
+            <ThumbUpOffAltIcon onClick={handleLike} className="bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline" />
           )}
           {likes}
-          <ChatBubbleOutlineIcon className="comment-button" />
+          <ChatBubbleOutlineIcon className="bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline" />
           {comments}
         </span>
       </div>
-
+      <hr/>
       {/* Comments Section */}
       <Comment postId={post._id} />
 

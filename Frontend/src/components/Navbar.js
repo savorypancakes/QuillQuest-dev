@@ -25,13 +25,12 @@ const Navbar = () => {
 
 
       <div className="navbar-right">
-        <ul className="nav-links">
-          <li><Link to="/home"> Home <HomeIcon /></Link></li>
-          <li><Link to="/createpost"> Create  <EditIcon /></Link></li>
-        </ul>
-        {/* <button className="icon-button" aria-label="Notifications">
-          <NotificationsNoneIcon />
-        </button> */}
+          <Link to="/home" className='home'> Home <HomeIcon /></Link>
+          <Link to="/createpost" className='create'> Create  <EditIcon /></Link>
+        
+        <button className="icon-button" aria-label="Notifications">
+          <NotificationsNoneIcon fontSize='large'/>
+        </button>
         {auth.user && (
         <div className="user-icon">
           <button onClick={toggleDropdown} className="profile-btn">
