@@ -44,6 +44,12 @@ exports.getPosts = async (req, res, next) => {
     const posts = await Post.find()
       .populate('userId', 'username')
       .populate('prompt')
+      .populate({
+        path: 'comments',
+        populate: {
+          path: 'replies',
+        },
+      })
       .sort({ createdAt: -1 });
     res.json(posts);
   } catch (error) {
@@ -58,7 +64,13 @@ exports.getPostById = async (req, res, next) => {
   try {
     const post = await Post.findById(req.params.id)
       .populate('userId', 'username')
-      .populate('prompt');
+      .populate('prompt')
+      .populate({
+        path: 'comments',
+        populate: {
+        path: 'replies',
+        },
+      });
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }

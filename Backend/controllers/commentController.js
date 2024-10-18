@@ -52,10 +52,7 @@ exports.getCommentsByPost = async (req, res, next) => {
   try {
     const comments = await Comment.find({ post: req.params.postId })
       .populate('userId', 'username')
-      .populate({
-        path: 'replies',
-        populate: { path: 'userId', select: 'username' }, // Populate user information for replies
-      })
+      .populate('replies')
       .sort({ createdAt: 1 }); // Oldest first
 
     res.json(comments);

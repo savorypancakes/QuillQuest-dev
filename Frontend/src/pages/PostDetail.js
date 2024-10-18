@@ -61,7 +61,11 @@ const PostDetail = () => {
       setPost(response.data); // Store the post data in state
       setLikes(response.data.likes.length); // Set initial number of likes
       setHasLiked(response.data.likes.includes(auth.user.id)); // Check if the current user has liked the post
-      setComments(response.data.comments.length);
+      // Calculate total number of comments and replies
+      const totalCommentsAndReplies = response.data.comments.length + response.data.comments.reduce((acc, comment) => {
+        return acc + (comment.replies ? comment.replies.length : 0);
+      }, 0);
+      setComments(totalCommentsAndReplies);
       setLoading(false); // Set loading to false once data is loaded
     } catch (error) {
       console.error('Error fetching post:', error);
@@ -75,7 +79,13 @@ const PostDetail = () => {
     fetchPost();
   }, [id]);
 
-  // Function to toggle replies visibility for a comment
+  // Function to update comments count when a new comment or reply is added
+  const updateCommentsCount = (newComments) => {
+    const totalCommentsAndReplies = newComments.length + newComments.reduce((acc, comment) => {
+      return acc + (comment.replies ? comment.replies.length : 0);
+    }, 0);
+    setComments(totalCommentsAndReplies);
+  };
   
   // Loading state
   if (loading) {
@@ -95,24 +105,24 @@ const PostDetail = () => {
   // Display the post details
   return (
     <div className="flex flex-col bg-[transparent] mx-[20%] pt-20 pb-5 px-5">
-      <Navbar/>
+      <Navbar />
       <Link to="/home" className="back-link">← Back to Home</Link>
       <div className='flex'>
         <div className="bg-[#9500F0] text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]"></div>
         <div className="flex flex-col items-baseline">
-        <span className='font-semibold text-black'> {post.userId?.username || 'Unknown'}</span>
-        <span className='text-[gray] text-[0.85rem]'>Posted on: {new Date(post.createdAt).toLocaleString()}</span>
+          <span className='font-semibold text-black'> {post.userId?.username || 'Unknown'}</span>
+          <span className='text-[gray] text-[0.85rem]'>Posted on: {new Date(post.createdAt).toLocaleString()}</span>
+        </div>
       </div>
-      </div>
-      
+
 
       <h2 className="text-black font-bold text-2xl text-left mt-5 mb-[15px] mx-0">{post.title}</h2>
 
       <div className="pb-5">
-      <div dangerouslySetInnerHTML={{ __html: post.content }} />
+        <div dangerouslySetInnerHTML={{ __html: post.content }} />
       </div>
 
-      
+
       <div className="flex justify-between">
         <span>
           {hasLiked ? (
@@ -125,11 +135,11 @@ const PostDetail = () => {
           {comments}
         </span>
       </div>
-      <hr/>
+      <hr />
       {/* Comments Section */}
-      <Comment postId={post._id} />
+      <Comment postId={post._id} onCommentsUpdate={updateCommentsCount}/>
 
-      
+
     </div>
   );
 };

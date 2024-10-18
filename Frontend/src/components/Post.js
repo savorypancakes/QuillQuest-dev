@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
@@ -11,8 +11,17 @@ import { formatDistanceToNow } from 'date-fns';
 const Post = ({ post }) => {
   const { auth } = useContext(AuthContext);
   const [likes, setLikes] = useState(post.likes.length);
-  const [comments, setComments] = useState(post.comments.length);
+  const [commentsCount, setCommentsCount] = useState(0);
   const [hasLiked, setHasLiked] = useState(post.likes.includes(auth.user.id)); // Check if user already liked the post
+  
+  // Calculate total comments and replies count
+  useEffect(() => {
+    if (post.comments) {
+      const totalReplies = post.comments.reduce((acc, comment) => acc + (comment.replies?.length || 0), 0);
+      setCommentsCount(post.comments.length + totalReplies);
+    }
+  }, [post.comments]);
+
   // // Function to like a post
   const handleLike = async () => {
     try {
@@ -74,7 +83,8 @@ const Post = ({ post }) => {
           <ThumbUpOffAltIcon onClick={handleLike} className="bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline"/>
         )}
         {likes}
-        <Link to={`/posts/${post._id}`}><ChatBubbleOutlineIcon className="bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline"/></Link>{comments}
+        <Link to={`/posts/${post._id}`}><ChatBubbleOutlineIcon className="bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline"/></Link>
+        {commentsCount}
         </span>
         
       </div>

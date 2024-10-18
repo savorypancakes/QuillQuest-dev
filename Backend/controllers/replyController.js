@@ -27,6 +27,9 @@ exports.createReply = async (req, res, next) => {
 
     const savedReply = await newReply.save();
 
+    // Add the reply to the comment's replies array
+    comment.replies.push(savedReply._id);
+    await comment.save();
     res.status(201).json(savedReply);
   } catch (error) {
     next(error);

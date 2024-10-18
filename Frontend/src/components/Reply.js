@@ -98,7 +98,7 @@ const Reply = ({ commentId }) => {
                         </div>
                     ))
                 ) : (
-                    <p>No replies yet. Be the first to reply!</p>
+                    <p></p>
                 )}
             </div>
             {/* New Reply Form */}

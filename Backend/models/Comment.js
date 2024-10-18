@@ -29,7 +29,7 @@ const CommentSchema = new mongoose.Schema({
   },
   replies: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Comment',
+    ref: 'Reply',
   }],
   likes: [{
     type: mongoose.Schema.Types.ObjectId,

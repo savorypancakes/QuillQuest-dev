@@ -12,7 +12,7 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import '../assets/css/index.css';
 import { formatDistanceToNow } from 'date-fns';
 
-const Comment = ({ postId }) => {
+const Comment = ({ postId, onCommentsUpdate }) => {
   const { auth } = useContext(AuthContext); // Access auth context for user and token
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
@@ -31,6 +31,7 @@ const Comment = ({ postId }) => {
           },
         });
         setComments(response.data);
+        onCommentsUpdate(response.data); // Update the total comments count in the parent component
         setLoading(false);
       } catch (err) {
         setError('Error loading comments');
@@ -71,7 +72,9 @@ const Comment = ({ postId }) => {
         },
       };
 
-      setComments([...comments, newCommentData]); // Append the new comment to the list
+      const updatedComments = [...comments, newCommentData];
+      setComments(updatedComments); // Append the new comment to the list
+      onCommentsUpdate(updatedComments); // Update the total comments count in the parent component
       setNewComment(''); // Clear the input
       setLoading(false);
     } catch (err) {
@@ -119,6 +122,45 @@ const Comment = ({ postId }) => {
       );
     } catch (err) {
       console.error('Error unliking the comment:', err);
+    }
+  };
+
+  const handleReplySubmit = async (commentId, replyContent) => {
+    if (!replyContent.trim()) {
+      setError('Reply cannot be empty');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await api.post(
+        `/comments/${commentId}/replies`,
+        { content: replyContent },
+        {
+          headers: {
+            Authorization: `Bearer ${auth.token}`,
+          },
+        }
+      );
+
+      setComments((prevComments) => {
+        const updatedComments = prevComments.map((comment) => {
+          if (comment._id === commentId) {
+            return {
+              ...comment,
+              replies: [...comment.replies, response.data],
+            };
+          }
+          return comment;
+        });
+        onCommentsUpdate(updatedComments); // Update the total comments count in the parent component
+        return updatedComments;
+      });
+
+      setLoading(false);
+    } catch (err) {
+      setError('Failed to submit reply');
+      setLoading(false);
     }
   };
   return (
@@ -180,9 +222,12 @@ const Comment = ({ postId }) => {
                   onClick={() => toggleReplies(comment._id)}
                 >
                   {showReplies[comment._id] ? (
-                    <ExpandMoreIcon />
+                    <ExpandLessIcon />
                   ) : (
-                    <ChatBubbleOutlineIcon className='w-auto bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline' />
+                    <div>
+                      <ChatBubbleOutlineIcon className='w-auto bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline' />
+                      <span>{comment.replies.length }</span>
+                    </div>
                   )}
                   {showReplies[comment._id] ? ' Collapse' : ''}
                 </button>
@@ -192,7 +237,7 @@ const Comment = ({ postId }) => {
 
               {showReplies[comment._id] && (
                 <div className="flex flex-col">
-                  <Reply commentId={comment._id} />
+                  <Reply commentId={comment._id} onCommentsUpdate={onCommentsUpdate}/>
                 </div>
               )}
             </div>
