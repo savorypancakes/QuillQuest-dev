@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
+import { formatDistanceToNow } from 'date-fns';
 
 const Reply = ({ commentId }) => {
     const { auth } = useContext(AuthContext);
@@ -53,7 +54,16 @@ const Reply = ({ commentId }) => {
                 }
             );
 
-            setReplies([...replies, response.data]); // Append the new reply to the list
+            // Add the new reply with the current user's data to the replies list
+            const newReplyData = {
+                ...response.data,
+                userId: {
+                    _id: auth.user.id,
+                    username: auth.user.username,
+                },
+            };
+
+            setReplies([...replies, newReplyData]); // Append the new reply to the list
             setNewReply(''); // Clear the input
             setLoading(false);
         } catch (err) {
@@ -76,15 +86,15 @@ const Reply = ({ commentId }) => {
                     replies.map((reply) => (
                         <div key={reply._id} className="reply-item p-2 bg-[transparent] rounded-md">
                             <div className='flex mt-0'>
-                            <div className="ml-3 bg-[#9500F0] text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]"></div>
+                                <div className="ml-3 bg-[#9500F0] text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]"></div>
                                 <div className='flex flex-col items-baseline'>
-                                <p className="font-semibold">{reply.userId?.username}</p>
-                                <p className="text-xs text-gray-500">{new Date(reply.createdAt).toLocaleString()}</p>
-                                <p>{reply.content}</p>
+                                    <p className="font-semibold">{reply.userId?.username}</p>
+                                    <p className="text-xs text-gray-500"> • {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}</p>
+                                    <p>{reply.content}</p>
                                 </div>
-                                
+
                             </div>
-                            
+
                         </div>
                     ))
                 ) : (
@@ -102,14 +112,14 @@ const Reply = ({ commentId }) => {
                 />
                 <div className='flex'>
                     <button
-                    type="submit"
-                    className="w-auto mt-2 px-4 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                    disabled={loading}
-                >
-                    {loading ? 'Posting...' : 'Post Reply'}
-                </button>
+                        type="submit"
+                        className="w-auto mt-2 px-4 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                        disabled={loading}
+                    >
+                        {loading ? 'Posting...' : 'Post Reply'}
+                    </button>
                 </div>
-                
+
             </form>
 
 

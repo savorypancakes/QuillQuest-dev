@@ -10,6 +10,7 @@ import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import '../assets/css/index.css';
+import { formatDistanceToNow } from 'date-fns';
 
 const Comment = ({ postId }) => {
   const { auth } = useContext(AuthContext); // Access auth context for user and token
@@ -61,7 +62,16 @@ const Comment = ({ postId }) => {
         }
       );
 
-      setComments([...comments, response.data]); // Append the new comment to the list
+      // Add the new comment with the current user's data to the comments list
+      const newCommentData = {
+        ...response.data,
+        userId: {
+          _id: auth.user.id,
+          username: auth.user.username,
+        },
+      };
+
+      setComments([...comments, newCommentData]); // Append the new comment to the list
       setNewComment(''); // Clear the input
       setLoading(false);
     } catch (err) {
@@ -135,7 +145,7 @@ const Comment = ({ postId }) => {
         </button>
       </form>
       {/* Comment List */}
-      
+
       <div className="comment-list space-y-4 mb-4">
         {loading && <p>Loading comments...</p>}
         {comments.length > 0 ? (
@@ -145,12 +155,12 @@ const Comment = ({ postId }) => {
                 <div className="ml-3 bg-[#9500F0] text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]"></div>
                 <div className='flex flex-col items-baseline'>
                   <p className="font-semibold">{comment.userId?.username}</p>
-                  <p className="text-xs text-gray-500">{new Date(comment.createdAt).toLocaleString()}</p>
+                  <p className="text-xs text-gray-500"> • {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}</p>
                   <p className='mt-5'>{comment.content}</p>
                 </div>
-                
+
               </div>
-              
+
 
               <div className="flex">
                 {comment.likes.includes(auth.user.id) ? (
@@ -172,7 +182,7 @@ const Comment = ({ postId }) => {
                   {showReplies[comment._id] ? (
                     <ExpandMoreIcon />
                   ) : (
-                    <ChatBubbleOutlineIcon  className='w-auto bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline'/>
+                    <ChatBubbleOutlineIcon className='w-auto bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline' />
                   )}
                   {showReplies[comment._id] ? ' Collapse' : ''}
                 </button>

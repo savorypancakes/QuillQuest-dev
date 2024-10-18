@@ -6,6 +6,7 @@ import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import '../assets/css/index.css'
+import { formatDistanceToNow } from 'date-fns';
 
 const Post = ({ post }) => {
   const { auth } = useContext(AuthContext);
@@ -50,7 +51,7 @@ const Post = ({ post }) => {
           <div className="bg-[#9500F0] text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]"></div>
           <div className="flex flex-col items-baseline">
             <span className="font-semibold text-black">{post.username}</span>
-            <span className="text-[gray] text-[0.85rem]">{new Date(post.createdAt).toLocaleString()}</span>
+            <span className="text-[gray] text-[0.85rem]"> • {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
             
           </div>
         </div>
