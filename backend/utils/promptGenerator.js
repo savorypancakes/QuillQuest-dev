@@ -8,7 +8,7 @@ exports.generatePrompt = async () => {
     const response = await axios.post(GROQ_API_URL, {
       model: "llama3-small",
       messages: [
-        { role: "system", content: "You are a helpful assistant that generates essay topic prompts." },
+        { role: "system", content: `You are a helpful assistant that generates argumentative essay topic prompts. Generate only the prompt. Ensure the prompt is only one sentence length and is curt. Example: Does Technology Make Us More Alone?` },
         { role: "user", content: "Generate a thought-provoking essay topic prompt suitable for high school or college students. The topic should be specific, engaging, and encourage critical thinking." }
       ],
       max_tokens: 100
