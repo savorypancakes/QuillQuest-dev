@@ -14,6 +14,14 @@ const ERROR_CATEGORIES = [
 ];
 const CHECK_COOLDOWN = 30; // 30 seconds cooldown
 
+const ERROR_COLORS = {
+  spelling: 'bg-red-200',
+  punctuation: 'bg-yellow-200',
+  lexicoSemantic: 'bg-orange-200',
+  stylistic: 'bg-blue-200',
+  typographical: 'bg-green-200'
+};
+
 const getCategoryDisplayName = (category) => {
   const displayNames = {
     spelling: 'Spelling',
@@ -43,6 +51,7 @@ const SidebarItem = ({ title, progress, isActive, isLast }) => (
 );
 
 export default function EssayBlock() {
+  const [highlightedContent, setHighlightedContent] = useState('');
   const { sectionId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -52,10 +61,11 @@ export default function EssayBlock() {
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [errors, setErrors] = useState({});
   const [isChecking, setIsChecking] = useState(false);
-  const [activeErrorCategory, setActiveErrorCategory] = useState('Spelling');
+  const [activeErrorCategory, setActiveErrorCategory] = useState('spelling');
   const [lastCheckTime, setLastCheckTime] = useState(0);
   const [score, setScore] = useState(0);
   const [showErrorPanel, setShowErrorPanel] = useState(false);
+  
 
   useEffect(() => {
     const savedContent = localStorage.getItem(`essayContent_${sectionId}`);
@@ -69,6 +79,30 @@ export default function EssayBlock() {
       localStorage.setItem(`essayContent_${sectionId}`, essayContent);
     }
   }, [sectionId, essayContent]);
+
+  useEffect(() => {
+    if (showErrorPanel && Object.keys(errors).length > 0) {
+      const highlighted = createHighlightedText(essayContent, errors);
+      setHighlightedContent(highlighted);
+    }
+  }, [errors, essayContent, showErrorPanel]);
+
+  const createHighlightedText = (text, errorList) => {
+    if (!text || !errorList) return '';
+    let html = text;
+    Object.entries(errorList).forEach(([category, errors]) => {
+      errors.forEach(error => {
+        const textToReplace = error.text;
+        if (textToReplace && html.includes(textToReplace)) {
+          html = html.replace(
+            textToReplace,
+            `<span class="${ERROR_COLORS[category]} rounded px-1" title="${error.message}">${textToReplace}</span>`
+          );
+        }
+      });
+    });
+    return html;
+  };
 
   const toggleAssistant = () => setIsAssistantOpen(!isAssistantOpen);
 
@@ -89,6 +123,8 @@ export default function EssayBlock() {
     try {
       const categorizedErrors = await checkEssayErrors(essayContent);
       setErrors(categorizedErrors);
+      // Add this line after setErrors(categorizedErrors);
+      setHighlightedContent(createHighlightedText(essayContent, categorizedErrors));
       setLastCheckTime(now);
       setShowErrorPanel(true); // Show error panel after checking
 
@@ -207,13 +243,34 @@ export default function EssayBlock() {
 
         <div className="flex-grow p-6 overflow-auto">
           <div className={`grid ${showErrorPanel ? 'grid-cols-2' : 'grid-cols-1'} gap-6`}>
-            <div className="bg-white rounded-lg shadow p-4">
-              <textarea
-                value={essayContent}
-                onChange={(e) => setEssayContent(e.target.value)}
-                className="w-full h-full min-h-[500px] resize-none focus:outline-none"
-                placeholder={`Start writing your ${section?.title} here...`}
-              />
+            <div className="bg-white rounded-lg shadow p-4 h-[600px]"> {/* Fixed height */}
+              <div className="relative h-full">
+                {showErrorPanel ? (
+                  <div
+                    className="h-[calc(100%-40px)] overflow-y-auto whitespace-pre-wrap font-mono"
+                    dangerouslySetInnerHTML={{ __html: highlightedContent || essayContent }}
+                  />
+                ) : (
+                  <textarea
+                    value={essayContent}
+                    onChange={(e) => setEssayContent(e.target.value)}
+                    className="w-full h-[calc(100%-40px)] resize-none focus:outline-none font-mono"
+                    placeholder={`Start writing your ${section?.title} here...`}
+                  />
+                )}
+                {showErrorPanel && (
+                  <div className="h-[40px] mt-2 p-2 bg-gray-50 border-t">
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(ERROR_COLORS).map(([category, colorClass]) => (
+                        <div key={category} className="flex items-center space-x-1">
+                          <span className={`inline-block w-3 h-3 rounded ${colorClass}`}></span>
+                          <span className="text-xs text-gray-600">{getCategoryDisplayName(category)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             
             {showErrorPanel && (
@@ -225,7 +282,7 @@ export default function EssayBlock() {
                         key={category}
                         onClick={() => setActiveErrorCategory(category)}
                         className={`px-3 py-1 rounded-full text-sm ${
-                          activeErrorCategory === category
+                          activeErrorCategory === category.toLowerCase()
                             ? 'bg-purple-600 text-white'
                             : 'bg-gray-200 text-gray-700'
                         }`}
