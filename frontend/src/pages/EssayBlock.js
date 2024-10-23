@@ -150,8 +150,8 @@ export default function EssayBlock() {
     const getColorValues = (colorClass) => {
       const colorMap = {
         'red-200': '254, 202, 202',
-        'yellow-200': '254, 240, 138',
-        'orange-200': '254, 215, 170',
+        'yellow-200': '255, 255, 0',
+        'orange-200': '254, 128, 0',
         'blue-200': '191, 219, 254',
         'green-200': '187, 247, 208'
       };
@@ -352,8 +352,9 @@ export default function EssayBlock() {
 
         <div className="flex-grow p-6 overflow-auto">
           <div className={`grid ${showErrors ? 'grid-cols-2' : 'grid-cols-1'} gap-6`}>
-            <div className="bg-white rounded-lg shadow p-4 h-[600px]"> {/* Fixed height */}
+            <div className="bg-white rounded-lg shadow p-4 h-[600px]">
               <div className="relative h-full">
+                {/* Text area/highlighted content */}
                 {showErrors ? (
                   <div
                     className="h-[calc(100%-80px)] overflow-y-auto whitespace-pre-wrap font-mono"
@@ -368,6 +369,7 @@ export default function EssayBlock() {
                   />
                 )}
 
+                {/* Error toggle and map at the bottom */}
                 {Object.keys(errors).length > 0 && (
                   <div className="absolute bottom-0 left-0 right-0 h-[80px] border-t border-gray-200">
                     <div className="flex justify-between items-center p-2">
@@ -391,7 +393,7 @@ export default function EssayBlock() {
                       {showErrors && (
                         <div className="flex flex-wrap gap-2">
                           {Object.entries(ERROR_COLORS)
-                            .filter(([category]) => errors[category]?.length > 0) // Only show categories with errors
+                            .filter(([category]) => errors[category]?.length > 0)
                             .map(([category, colorClass]) => (
                               <div key={category} className="flex items-center space-x-1">
                                 <span className={`inline-block w-3 h-3 rounded ${colorClass}`}></span>
@@ -405,20 +407,20 @@ export default function EssayBlock() {
                 )}
               </div>
             </div>
-            
-            
+
+            {/* Error panel on the right */}
             {showErrors && (
               <div className="space-y-4">
                 <div className="bg-white rounded-lg p-4 shadow">
                   <div className="flex space-x-2 overflow-x-auto pb-2">
                     {ERROR_CATEGORIES
-                      .filter(category => errors[category]?.length > 0) // Only show categories with errors
+                      .filter(category => errors[category]?.length > 0)
                       .map(category => (
                         <button
                           key={category}
                           onClick={() => setActiveErrorCategory(category)}
                           className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
-                            activeErrorCategory === category.toLowerCase()
+                            activeErrorCategory === category
                               ? 'bg-purple-600 text-white'
                               : 'bg-gray-200 text-gray-700'
                           }`}
