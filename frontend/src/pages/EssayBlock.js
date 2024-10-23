@@ -51,12 +51,11 @@ const SidebarItem = ({ title, progress, isActive, isLast }) => (
 );
 
 export default function EssayBlock() {
-  const [highlightedContent, setHighlightedContent] = useState('');
   const { sectionId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const { section, allSections, essayInfo } = location.state || {};
-
+  const [highlightedContent, setHighlightedContent] = useState('');
   const [essayContent, setEssayContent] = useState('');
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [errors, setErrors] = useState({});
@@ -65,6 +64,7 @@ export default function EssayBlock() {
   const [lastCheckTime, setLastCheckTime] = useState(0);
   const [score, setScore] = useState(0);
   const [showErrors, setShowErrors] = useState(false);
+  const [hasChecked, setHasChecked] = useState(false);
   
 
   useEffect(() => {
@@ -228,19 +228,19 @@ export default function EssayBlock() {
       setHighlightedContent(createHighlightedText(essayContent, categorizedErrors));
       setLastCheckTime(now);
       setShowErrors(true);
-  
-      // Set active category to the first one that has errors
+      setHasChecked(true);
+
       const firstCategoryWithErrors = ERROR_CATEGORIES.find(
         category => categorizedErrors[category]?.length > 0
       );
       if (firstCategoryWithErrors) {
         setActiveErrorCategory(firstCategoryWithErrors);
       }
-  
+
       const totalErrors = Object.values(categorizedErrors).flat().length;
       const newScore = Math.max(0, score + (10 - totalErrors));
       setScore(newScore);
-  
+
       if (totalErrors === 0) {
         alert('Great job! No errors found in this section. 🎉');
       }
@@ -334,6 +334,7 @@ export default function EssayBlock() {
       </div>
 
       <div className="flex-grow flex flex-col">
+        {/* Header */}
         <header className="bg-white border-b border-gray-200 p-4 flex justify-between items-center">
           <h1 className="text-2xl font-semibold">{section?.title}</h1>
           <div className="flex items-center space-x-4">
@@ -350,92 +351,99 @@ export default function EssayBlock() {
           </div>
         </header>
 
-        <div className="flex-grow p-6 overflow-auto">
-          <div className={`grid ${showErrors ? 'grid-cols-2' : 'grid-cols-1'} gap-6`}>
-            <div className="bg-white rounded-lg shadow p-4 h-[600px]">
-              <div className="relative h-full">
-                {/* Text area/highlighted content */}
-                {showErrors ? (
-                  <div
-                    className="h-[calc(100%-80px)] overflow-y-auto whitespace-pre-wrap font-mono"
-                    dangerouslySetInnerHTML={{ __html: highlightedContent || essayContent }}
-                  />
-                ) : (
-                  <textarea
-                    value={essayContent}
-                    onChange={(e) => setEssayContent(e.target.value)}
-                    className="w-full h-[calc(100%-80px)] resize-none focus:outline-none font-mono"
-                    placeholder={`Start writing your ${section?.title} here...`}
-                  />
-                )}
-
-                {/* Error toggle and map at the bottom */}
-                {Object.keys(errors).length > 0 && (
-                  <div className="absolute bottom-0 left-0 right-0 h-[80px] border-t border-gray-200">
-                    <div className="flex justify-between items-center p-2">
-                      <button
-                        onClick={() => setShowErrors(!showErrors)}
-                        className="flex items-center space-x-2 px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-                      >
-                        {showErrors ? (
-                          <>
-                            <EyeOffIcon className="h-5 w-5 text-gray-600" />
-                            <span>Hide Errors</span>
-                          </>
-                        ) : (
-                          <>
-                            <EyeIcon className="h-5 w-5 text-gray-600" />
-                            <span>Show Errors</span>
-                          </>
-                        )}
-                      </button>
-                      
-                      {showErrors && (
-                        <div className="flex flex-wrap gap-2">
-                          {Object.entries(ERROR_COLORS)
-                            .filter(([category]) => errors[category]?.length > 0)
-                            .map(([category, colorClass]) => (
-                              <div key={category} className="flex items-center space-x-1">
-                                <span className={`inline-block w-3 h-3 rounded ${colorClass}`}></span>
-                                <span className="text-xs text-gray-600">{getCategoryDisplayName(category)}</span>
-                              </div>
-                            ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+        {/* Main content area with fixed height */}
+        <div className="flex-grow p-6 overflow-hidden h-[calc(100vh-8rem)]">
+          <div className="h-full grid grid-cols-12 gap-6">
+            {/* Text editor */}
+            <div className={`${hasChecked && showErrors ? 'col-span-5' : 'col-span-12'} bg-white rounded-lg shadow overflow-hidden flex flex-col`}>
+              <div className="h-[calc(100%-60px)] p-4 overflow-hidden">
+                <textarea
+                  value={essayContent}
+                  onChange={(e) => setEssayContent(e.target.value)}
+                  className="w-full h-full resize-none focus:outline-none font-mono overflow-auto"
+                  placeholder={`Start writing your essay here...`}
+                />
               </div>
+              {hasChecked && (
+                <div className="h-[60px] px-4 py-3 border-t border-gray-200 flex items-center">
+                  <button
+                    onClick={() => setShowErrors(!showErrors)}
+                    className="flex items-center space-x-2 px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                  >
+                    {showErrors ? (
+                      <>
+                        <EyeOffIcon className="h-5 w-5 text-gray-600" />
+                        <span>Hide Corrections</span>
+                      </>
+                    ) : (
+                      <>
+                        <EyeIcon className="h-5 w-5 text-gray-600" />
+                        <span>Show Corrections</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Error panel on the right */}
-            {showErrors && (
-              <div className="space-y-4">
-                <div className="bg-white rounded-lg p-4 shadow">
-                  <div className="flex space-x-2 overflow-x-auto pb-2">
-                    {ERROR_CATEGORIES
-                      .filter(category => errors[category]?.length > 0)
-                      .map(category => (
-                        <button
-                          key={category}
-                          onClick={() => setActiveErrorCategory(category)}
-                          className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
-                            activeErrorCategory === category
-                              ? 'bg-purple-600 text-white'
-                              : 'bg-gray-200 text-gray-700'
-                          }`}
-                        >
-                          {getCategoryDisplayName(category)} ({errors[category]?.length})
-                        </button>
-                      ))}
+            {/* Highlighted content and error panel */}
+            {hasChecked && showErrors && (
+              <>
+                {/* Highlighted content */}
+                <div className="col-span-4 bg-white rounded-lg shadow overflow-hidden flex flex-col">
+                  <div className="h-[calc(100%-60px)] p-4 overflow-auto">
+                    <div
+                      className="whitespace-pre-wrap font-mono"
+                      dangerouslySetInnerHTML={{ __html: highlightedContent }}
+                    />
+                  </div>
+                  <div className="h-[60px] px-4 py-3 border-t border-gray-200 flex items-center">
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(ERROR_COLORS)
+                        .filter(([category]) => errors[category]?.length > 0)
+                        .map(([category, colorClass]) => (
+                          <div key={category} className="flex items-center space-x-1">
+                            <span className={`inline-block w-3 h-3 rounded ${colorClass}`}></span>
+                            <span className="text-xs text-gray-600">{getCategoryDisplayName(category)}</span>
+                          </div>
+                        ))}
+                    </div>
                   </div>
                 </div>
-                {renderErrorPanel()}
-              </div>
+
+                {/* Error panel */}
+                <div className="col-span-3 flex flex-col">
+                  <div className="bg-white rounded-lg p-4 shadow mb-4">
+                    <div className="flex space-x-2 overflow-x-auto">
+                      {ERROR_CATEGORIES
+                        .filter(category => errors[category]?.length > 0)
+                        .map(category => (
+                          <button
+                            key={category}
+                            onClick={() => setActiveErrorCategory(category)}
+                            className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
+                              activeErrorCategory === category
+                                ? 'bg-purple-600 text-white'
+                                : 'bg-gray-200 text-gray-700'
+                            }`}
+                          >
+                            {getCategoryDisplayName(category)} ({errors[category]?.length})
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                  <div className="flex-grow bg-white rounded-lg shadow overflow-auto">
+                    <div className="p-4">
+                      {renderErrorPanel()}
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>
 
+        {/* Footer */}
         <footer className="bg-white border-t border-gray-200 h-16 flex items-center justify-end px-6">
           <button
             onClick={handleCheck}
