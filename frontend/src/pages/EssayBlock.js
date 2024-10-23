@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { HomeIcon, ChatAlt2Icon, CheckCircleIcon, FlagIcon } from '@heroicons/react/solid';
+import { HomeIcon, ChatAlt2Icon, CheckCircleIcon, FlagIcon, EyeIcon, EyeOffIcon } from '@heroicons/react/solid';
 import WritingAssistant from '../components/WritingAssistant';
 import { checkEssayErrors } from '../utils/essayChecker';
 
@@ -64,7 +64,7 @@ export default function EssayBlock() {
   const [activeErrorCategory, setActiveErrorCategory] = useState('spelling');
   const [lastCheckTime, setLastCheckTime] = useState(0);
   const [score, setScore] = useState(0);
-  const [showErrorPanel, setShowErrorPanel] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
   
 
   useEffect(() => {
@@ -81,27 +81,129 @@ export default function EssayBlock() {
   }, [sectionId, essayContent]);
 
   useEffect(() => {
-    if (showErrorPanel && Object.keys(errors).length > 0) {
+    if (showErrors && Object.keys(errors).length > 0) {
       const highlighted = createHighlightedText(essayContent, errors);
       setHighlightedContent(highlighted);
     }
-  }, [errors, essayContent, showErrorPanel]);
+  }, [errors, essayContent, showErrors]);
 
   const createHighlightedText = (text, errorList) => {
     if (!text || !errorList) return '';
-    let html = text;
+    
+    // Add CSS for striped pattern
+    const stripeStyles = `
+      <style>
+        .error-overlap-2 {
+          background: repeating-linear-gradient(
+            45deg,
+            var(--color1),
+            var(--color1) 10px,
+            var(--color2) 10px,
+            var(--color2) 20px
+          );
+        }
+        .error-overlap-3 {
+          background: repeating-linear-gradient(
+            -45deg,
+            var(--color1),
+            var(--color1) 8px,
+            var(--color2) 8px,
+            var(--color2) 16px,
+            var(--color3) 16px,
+            var(--color3) 24px
+          );
+        }
+      </style>
+    `;
+  
+    // Create an array of all error positions and their metadata
+    let errorPositions = [];
     Object.entries(errorList).forEach(([category, errors]) => {
       errors.forEach(error => {
         const textToReplace = error.text;
-        if (textToReplace && html.includes(textToReplace)) {
-          html = html.replace(
-            textToReplace,
-            `<span class="${ERROR_COLORS[category]} rounded px-1" title="${error.message}">${textToReplace}</span>`
-          );
+        let startIndex = 0;
+        while (startIndex < text.length) {
+          const index = text.indexOf(textToReplace, startIndex);
+          if (index === -1) break;
+          
+          errorPositions.push({
+            start: index,
+            end: index + textToReplace.length,
+            category,
+            text: textToReplace,
+            message: error.message,
+            color: ERROR_COLORS[category]
+          });
+          startIndex = index + 1;
         }
       });
     });
-    return html;
+  
+    // Sort positions by start index
+    errorPositions.sort((a, b) => a.start - b.start);
+  
+    // Find overlapping regions
+    let result = stripeStyles;
+    let currentOverlaps = [];
+  
+    // Helper function to convert Tailwind color classes to RGB values
+    const getColorValues = (colorClass) => {
+      const colorMap = {
+        'red-200': '254, 202, 202',
+        'yellow-200': '254, 240, 138',
+        'orange-200': '254, 215, 170',
+        'blue-200': '191, 219, 254',
+        'green-200': '187, 247, 208'
+      };
+      return colorMap[colorClass] || '200, 200, 200';
+    };
+  
+    const processPosition = (pos) => {
+      // Get all errors that overlap at this position
+      currentOverlaps = errorPositions.filter(error => 
+        error.start <= pos && error.end > pos
+      );
+  
+      if (currentOverlaps.length === 0) {
+        return text.charAt(pos);
+      }
+  
+      // If this is the start of a new overlap region or a single error
+      if (pos === currentOverlaps[0].start) {
+        const endPos = Math.min(...currentOverlaps.map(e => e.end));
+        const segment = text.slice(pos, endPos);
+        
+        if (currentOverlaps.length === 1) {
+          // Single error
+          return `<span class="${currentOverlaps[0].color} rounded px-1" title="${currentOverlaps[0].message}">${segment}</span>`;
+        } else {
+          // Multiple overlapping errors
+          const messages = currentOverlaps.map(e => e.message).join('\n');
+          const colors = currentOverlaps.map(e => e.color.replace('bg-', ''));
+          
+          return `<span class="rounded px-1 error-overlap-${currentOverlaps.length}" 
+            style="--color1: rgb(${getColorValues(colors[0])}); 
+                   --color2: rgb(${getColorValues(colors[1])}); 
+                   ${colors[2] ? `--color3: rgb(${getColorValues(colors[2])});` : ''}"
+            title="${messages}">${segment}</span>`;
+        }
+      }
+      return '';
+    };
+  
+    // Build the result string
+    for (let i = 0; i < text.length; i++) {
+      let processed = processPosition(i);
+      if (processed) {
+        result += processed;
+        // Skip ahead if we just processed a span
+        if (processed.includes('span')) {
+          i = Math.min(...currentOverlaps.map(e => e.end)) - 1;
+        }
+      }
+    }
+  
+    return result;
   };
 
   const toggleAssistant = () => setIsAssistantOpen(!isAssistantOpen);
@@ -123,15 +225,22 @@ export default function EssayBlock() {
     try {
       const categorizedErrors = await checkEssayErrors(essayContent);
       setErrors(categorizedErrors);
-      // Add this line after setErrors(categorizedErrors);
       setHighlightedContent(createHighlightedText(essayContent, categorizedErrors));
       setLastCheckTime(now);
-      setShowErrorPanel(true); // Show error panel after checking
-
+      setShowErrors(true);
+  
+      // Set active category to the first one that has errors
+      const firstCategoryWithErrors = ERROR_CATEGORIES.find(
+        category => categorizedErrors[category]?.length > 0
+      );
+      if (firstCategoryWithErrors) {
+        setActiveErrorCategory(firstCategoryWithErrors);
+      }
+  
       const totalErrors = Object.values(categorizedErrors).flat().length;
       const newScore = Math.max(0, score + (10 - totalErrors));
       setScore(newScore);
-
+  
       if (totalErrors === 0) {
         alert('Great job! No errors found in this section. 🎉');
       }
@@ -242,54 +351,81 @@ export default function EssayBlock() {
         </header>
 
         <div className="flex-grow p-6 overflow-auto">
-          <div className={`grid ${showErrorPanel ? 'grid-cols-2' : 'grid-cols-1'} gap-6`}>
+          <div className={`grid ${showErrors ? 'grid-cols-2' : 'grid-cols-1'} gap-6`}>
             <div className="bg-white rounded-lg shadow p-4 h-[600px]"> {/* Fixed height */}
               <div className="relative h-full">
-                {showErrorPanel ? (
+                {showErrors ? (
                   <div
-                    className="h-[calc(100%-40px)] overflow-y-auto whitespace-pre-wrap font-mono"
+                    className="h-[calc(100%-80px)] overflow-y-auto whitespace-pre-wrap font-mono"
                     dangerouslySetInnerHTML={{ __html: highlightedContent || essayContent }}
                   />
                 ) : (
                   <textarea
                     value={essayContent}
                     onChange={(e) => setEssayContent(e.target.value)}
-                    className="w-full h-[calc(100%-40px)] resize-none focus:outline-none font-mono"
+                    className="w-full h-[calc(100%-80px)] resize-none focus:outline-none font-mono"
                     placeholder={`Start writing your ${section?.title} here...`}
                   />
                 )}
-                {showErrorPanel && (
-                  <div className="h-[40px] mt-2 p-2 bg-gray-50 border-t">
-                    <div className="flex flex-wrap gap-2">
-                      {Object.entries(ERROR_COLORS).map(([category, colorClass]) => (
-                        <div key={category} className="flex items-center space-x-1">
-                          <span className={`inline-block w-3 h-3 rounded ${colorClass}`}></span>
-                          <span className="text-xs text-gray-600">{getCategoryDisplayName(category)}</span>
+
+                {Object.keys(errors).length > 0 && (
+                  <div className="absolute bottom-0 left-0 right-0 h-[80px] border-t border-gray-200">
+                    <div className="flex justify-between items-center p-2">
+                      <button
+                        onClick={() => setShowErrors(!showErrors)}
+                        className="flex items-center space-x-2 px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                      >
+                        {showErrors ? (
+                          <>
+                            <EyeOffIcon className="h-5 w-5 text-gray-600" />
+                            <span>Hide Errors</span>
+                          </>
+                        ) : (
+                          <>
+                            <EyeIcon className="h-5 w-5 text-gray-600" />
+                            <span>Show Errors</span>
+                          </>
+                        )}
+                      </button>
+                      
+                      {showErrors && (
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(ERROR_COLORS)
+                            .filter(([category]) => errors[category]?.length > 0) // Only show categories with errors
+                            .map(([category, colorClass]) => (
+                              <div key={category} className="flex items-center space-x-1">
+                                <span className={`inline-block w-3 h-3 rounded ${colorClass}`}></span>
+                                <span className="text-xs text-gray-600">{getCategoryDisplayName(category)}</span>
+                              </div>
+                            ))}
                         </div>
-                      ))}
+                      )}
                     </div>
                   </div>
                 )}
               </div>
             </div>
             
-            {showErrorPanel && (
+            
+            {showErrors && (
               <div className="space-y-4">
                 <div className="bg-white rounded-lg p-4 shadow">
-                  <div className="flex space-x-2">
-                    {ERROR_CATEGORIES.map(category => (
-                      <button
-                        key={category}
-                        onClick={() => setActiveErrorCategory(category)}
-                        className={`px-3 py-1 rounded-full text-sm ${
-                          activeErrorCategory === category.toLowerCase()
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-gray-200 text-gray-700'
-                        }`}
-                      >
-                        {getCategoryDisplayName(category)}
-                      </button>
-                    ))}
+                  <div className="flex space-x-2 overflow-x-auto pb-2">
+                    {ERROR_CATEGORIES
+                      .filter(category => errors[category]?.length > 0) // Only show categories with errors
+                      .map(category => (
+                        <button
+                          key={category}
+                          onClick={() => setActiveErrorCategory(category)}
+                          className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
+                            activeErrorCategory === category.toLowerCase()
+                              ? 'bg-purple-600 text-white'
+                              : 'bg-gray-200 text-gray-700'
+                          }`}
+                        >
+                          {getCategoryDisplayName(category)} ({errors[category]?.length})
+                        </button>
+                      ))}
                   </div>
                 </div>
                 {renderErrorPanel()}
