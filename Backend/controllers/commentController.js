@@ -2,6 +2,7 @@
 
 const Comment = require('../models/Comment');
 const Post = require('../models/Post');
+const Notification = require('../models/Notification');
 
 // @desc    Create a new comment
 // @route   POST /api/posts/:postId/comments
@@ -37,6 +38,17 @@ exports.createComment = async (req, res, next) => {
       // Add comment to post's comments array
       post.comments.push(savedComment._id);
       await post.save();
+
+      // Create a notification for the post owner
+      if (post.userId.toString() !== req.user._id.toString()) {
+        const notification = new Notification({
+          userId: post.userId,
+          message: `${req.user.username} commented on your post.`,
+          type: 'comment',
+          postId: post._id
+        });
+        await notification.save();
+      }
     }
 
     res.status(201).json(savedComment);
