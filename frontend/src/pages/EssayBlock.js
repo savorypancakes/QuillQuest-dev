@@ -1,8 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { HomeIcon, ChatAlt2Icon, CheckCircleIcon, FlagIcon, EyeIcon, EyeOffIcon } from '@heroicons/react/solid';
+import { 
+  HomeIcon, 
+  ChatAlt2Icon, 
+  CheckCircleIcon, 
+  EyeIcon, 
+  EyeOffIcon 
+} from '@heroicons/react/solid';
 import WritingAssistant from '../components/WritingAssistant';
 import { checkEssayErrors } from '../utils/essayChecker';
+import { checkSectionCompleteness, parseThesisPoints, generateBodySections } from '../utils/checkSectionCompleteness';
+import CompletionButton from '../components/CompletionButton';
+import EssayPreviewModal from '../components/EssayPreviewModal';
+import SectionPreview from '../components/SectionPreview';
+import { SectionRequirements } from '../components/SectionRequirements';
+import { CompletionRequirementsModal } from '../components/CompletionRequirementsModal';
+
+
+
 
 // Update the ERROR_CATEGORIES constant in EssayBlock.js
 const ERROR_CATEGORIES = [
@@ -34,21 +49,82 @@ const getCategoryDisplayName = (category) => {
 };
 
 
-const ProgressCircle = ({ progress, isActive }) => (
-  <div className={`w-6 h-6 rounded-full ${isActive ? 'bg-purple-600' : 'bg-purple-200'} flex items-center justify-center`}>
-    <div className={`w-4 h-4 rounded-full ${isActive ? 'bg-white' : 'bg-purple-600'}`} style={{ opacity: progress ? 1 : 0.3 }}></div>
-  </div>
-);
+// Replace the entire SidebarItem component with this version:
+const SidebarItem = ({ title, progress, isActive, isLast, id, onSelect }) => {
+  const hasSavedContent = localStorage.getItem(`essayContent_${id}`)?.trim();
+  const requirements = JSON.parse(localStorage.getItem(`sectionRequirements_${id}`) || 'null');
+  const isClickable = hasSavedContent || progress || isActive;
+  
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center space-x-3 py-2">
+        <div 
+          className={`relative ${isClickable ? 'cursor-pointer' : 'cursor-not-allowed'} group`}
+          onClick={onSelect}
+        >
+          <div className={`w-6 h-6 rounded-full 
+            ${isActive ? 'bg-purple-600' : 
+              hasSavedContent ? 'bg-purple-400' : 
+              'bg-purple-200'} 
+            flex items-center justify-center transition-colors
+            ${isClickable ? 'hover:bg-purple-500' : ''}`}
+          >
+            <div className={`w-4 h-4 rounded-full 
+              ${isActive ? 'bg-white' : 'bg-purple-600'}`} 
+              style={{ opacity: hasSavedContent || progress ? 1 : 0.3 }}
+            />
+          </div>
+          {!isLast && <div className="absolute top-6 left-3 w-0.5 h-full bg-purple-200" />}
+          
+          {!isClickable && (
+            <div className="absolute left-8 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded 
+              opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+              {hasSavedContent ? 'Continue writing' : 'Start this section'}
+            </div>
+          )}
+        </div>
 
-const SidebarItem = ({ title, progress, isActive, isLast }) => (
-  <div className="flex items-center space-x-3 py-2">
-    <div className="relative">
-      <ProgressCircle progress={progress} isActive={isActive} />
-      {!isLast && <div className="absolute top-6 left-3 w-0.5 h-full bg-purple-200"></div>}
+        <div className="flex-1">
+          <span className={`text-gray-700 
+            ${isActive ? 'font-bold' : ''} 
+            ${hasSavedContent ? 'text-purple-600' : ''}`}
+          >
+            {title}
+            {hasSavedContent && !progress && (
+              <span className="ml-2 text-xs text-purple-400">
+                (draft{requirements ? ' - incomplete' : ''})
+              </span>
+            )}
+          </span>
+        </div>
+      </div>
+      
+      {/* Requirements display */}
+      {requirements && (
+        <div className="ml-9 text-xs bg-red-50 p-2 rounded-md">
+          <div className="font-medium text-red-800 mb-1">Missing Requirements:</div>
+          <ul className="list-disc pl-4 text-red-600 space-y-1">
+            {requirements.missing.map((req, idx) => (
+              <li key={idx} className="text-sm">{req}</li>
+            ))}
+          </ul>
+          {requirements.improvements && requirements.improvements.length > 0 && (
+            <>
+              <div className="font-medium text-blue-800 mt-2 mb-1">Suggestions:</div>
+              <ul className="list-disc pl-4 text-blue-600 space-y-1">
+                {requirements.improvements.map((imp, idx) => (
+                  <li key={idx} className="text-sm">{imp}</li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+      
+
     </div>
-    <span className={`text-gray-700 ${isActive ? 'font-bold' : ''}`}>{title}</span>
-  </div>
-);
+  );
+};
 
 export default function EssayBlock() {
   const { sectionId } = useParams();
@@ -59,12 +135,14 @@ export default function EssayBlock() {
   const [essayContent, setEssayContent] = useState('');
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [errors, setErrors] = useState({});
-  const [isChecking, setIsChecking] = useState(false);
   const [activeErrorCategory, setActiveErrorCategory] = useState('spelling');
   const [lastCheckTime, setLastCheckTime] = useState(0);
   const [score, setScore] = useState(0);
   const [showErrors, setShowErrors] = useState(false);
   const [hasChecked, setHasChecked] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
+  const [showRequirementsModal, setShowRequirementsModal] = useState(false);
+  const [completionRequirements, setCompletionRequirements] = useState(null);
   
 
   useEffect(() => {
@@ -157,7 +235,7 @@ export default function EssayBlock() {
       };
       return colorMap[colorClass] || '200, 200, 200';
     };
-  
+
     const processPosition = (pos) => {
       // Get all errors that overlap at this position
       currentOverlaps = errorPositions.filter(error => 
@@ -206,6 +284,37 @@ export default function EssayBlock() {
     return result;
   };
 
+  // Add this function to your EssayBlock component
+  // Replace your current handleSectionSelect function with this version
+const handleSectionSelect = (selectedSection) => {
+  // Check if there's saved content for the selected section
+  const hasSavedContent = localStorage.getItem(`essayContent_${selectedSection.id}`)?.trim();
+  
+  // Allow navigation if:
+  // 1. The section has any saved content, or
+  // 2. It's the current section, or
+  // 3. The section is already completed, or
+  // 4. The previous section has content (to allow natural progression)
+  const selectedIndex = allSections.findIndex(s => s.id === selectedSection.id);
+  const previousSection = selectedIndex > 0 ? allSections[selectedIndex - 1] : null;
+  const previousHasContent = previousSection 
+    ? localStorage.getItem(`essayContent_${previousSection.id}`)?.trim()
+    : true; // If it's the first section, allow access
+
+  if (hasSavedContent || 
+      selectedSection.id === sectionId || 
+      selectedSection.percentage === 100 || 
+      previousHasContent) {
+    navigate(`/essayblock/${selectedSection.id}`, {
+      state: {
+        section: selectedSection,
+        allSections,
+        essayInfo
+      }
+    });
+  }
+};
+
   const toggleAssistant = () => setIsAssistantOpen(!isAssistantOpen);
 
   const handleCheck = async () => {
@@ -252,16 +361,106 @@ export default function EssayBlock() {
     }
   };
 
-  const handleComplete = () => {
-    const updatedSections = allSections?.map(s => 
-      s.id === section?.id ? { ...s, percentage: 100 } : s
-    );
-    navigate('/essaybuilder', { 
-      state: { 
-        updatedSections,
-        essayInfo
-      } 
-    });
+  // Update your handleComplete function
+  const handleComplete = async () => {
+    if (!essayContent.trim()) {
+      alert('Please write some content before completing this section.');
+      return;
+    }
+  
+    setIsChecking(true);
+    try {
+      const currentSectionIndex = allSections.findIndex(s => s.id === sectionId);
+      const prevSectionId = currentSectionIndex > 0 ? allSections[currentSectionIndex - 1].id : null;
+      const previousContent = prevSectionId ? localStorage.getItem(`essayContent_${prevSectionId}`) : null;
+  
+      const completenessAnalysis = await checkSectionCompleteness(
+        essayContent, 
+        section?.title,
+        previousContent
+      );
+  
+      if (!completenessAnalysis.isComplete) {
+        const requirements = {
+          missing: completenessAnalysis.completionStatus.missing,
+          improvements: completenessAnalysis.suggestedImprovements
+        };
+        
+        localStorage.setItem(`sectionRequirements_${sectionId}`, JSON.stringify(requirements));
+        setCompletionRequirements(requirements);
+        setShowRequirementsModal(true);
+        return;
+      }
+  
+      // Clear requirements if section is complete
+      localStorage.removeItem(`sectionRequirements_${sectionId}`);
+      setCompletionRequirements(null);
+  
+      // Store the completed section content
+      localStorage.setItem(`essayContent_${sectionId}`, essayContent);
+      localStorage.setItem(`sectionAnalysis_${sectionId}`, JSON.stringify(completenessAnalysis));
+  
+      // Update sections with completion status
+      const updatedSections = allSections.map(s => 
+        s.id === sectionId ? { ...s, percentage: 100 } : s
+      );
+  
+      // Handle introduction-specific logic for body generation
+      if (section?.title.toLowerCase().includes('introduction')) {
+        const thesisPoints = await parseThesisPoints(completenessAnalysis.thesisStatement);
+        const newBodySections = generateBodySections(thesisPoints.mainPoints);
+        
+        const introIndex = currentSectionIndex;
+        const conclusionIndex = allSections.findIndex(s => 
+          s.title.toLowerCase().includes('conclusion')
+        );
+        
+        const sectionsWithBody = [
+          ...updatedSections.slice(0, introIndex + 1),
+          ...newBodySections,
+          ...(conclusionIndex >= 0 ? updatedSections.slice(conclusionIndex) : [])
+        ];
+  
+        // Navigate to the first body section
+        const nextSectionId = newBodySections[0].id;
+        navigate(`/essayblock/${nextSectionId}`, {
+          state: {
+            section: newBodySections[0],
+            allSections: sectionsWithBody,
+            essayInfo: {
+              ...essayInfo,
+              thesisPoints: thesisPoints.mainPoints
+            }
+          }
+        });
+      } else {
+        // For non-introduction sections, navigate to the next section if available
+        const nextSectionIndex = currentSectionIndex + 1;
+        if (nextSectionIndex < updatedSections.length) {
+          const nextSection = updatedSections[nextSectionIndex];
+          navigate(`/essayblock/${nextSection.id}`, {
+            state: {
+              section: nextSection,
+              allSections: updatedSections,
+              essayInfo
+            }
+          });
+        } else {
+          // If this was the last section, navigate back to essay builder
+          navigate('/essaybuilder', {
+            state: {
+              updatedSections,
+              essayInfo
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error during completion:', error);
+      alert('There was an error processing the section. Please try again.');
+    } finally {
+      setIsChecking(false);
+    }
   };
 
   const renderErrorPanel = () => {
@@ -274,7 +473,7 @@ export default function EssayBlock() {
         </div>
       );
     }
-
+  
     return (
       <div className="space-y-4">
         {errors[activeErrorCategory].map((error, index) => (
@@ -319,25 +518,42 @@ export default function EssayBlock() {
           <p className="text-sm"><strong>Title:</strong> {essayInfo?.title}</p>
           <p className="text-sm"><strong>Post Type:</strong> {essayInfo?.postType}</p>
         </div>
+        {/* // Update the sidebar section rendering */}
         <div className="p-4 flex-grow">
           <h3 className="font-semibold mb-2">Essay Progress</h3>
           {allSections?.map((s, index) => (
-            <SidebarItem 
-              key={s.id}
-              title={s.title} 
-              progress={s.percentage === 100}
-              isActive={s.id === sectionId}
-              isLast={index === allSections.length - 1}
-            />
+            <div key={s.id}>
+              <SidebarItem 
+                id={s.id}
+                title={s.title} 
+                progress={s.percentage === 100}
+                isActive={s.id === sectionId}
+                isLast={index === allSections.length - 1}
+                onSelect={() => handleSectionSelect(s)}
+              />
+              {s.percentage === 100 && s.id !== sectionId && (
+                <div className="ml-9 mt-1">
+                  <SectionPreview 
+                    sectionId={s.id}
+                    title={s.title}
+                  />
+                </div>
+              )}
+            </div>
           ))}
         </div>
       </div>
 
+      {/* Main content */}
       <div className="flex-grow flex flex-col">
         {/* Header */}
         <header className="bg-white border-b border-gray-200 p-4 flex justify-between items-center">
           <h1 className="text-2xl font-semibold">{section?.title}</h1>
           <div className="flex items-center space-x-4">
+            <EssayPreviewModal 
+              sections={allSections} 
+              essayInfo={essayInfo}
+            />
             <div className="text-purple-600 font-bold">
               Score: {score}
             </div>
@@ -453,14 +669,18 @@ export default function EssayBlock() {
             <CheckCircleIcon className="h-5 w-5 mr-2" />
             {isChecking ? 'Checking...' : 'Check'}
           </button>
-          <button
-            onClick={handleComplete}
-            className="bg-green-500 text-white px-6 py-2 rounded-full flex items-center"
-          >
-            <FlagIcon className="h-5 w-5 mr-2" />
-            Complete
-          </button>
+          <CompletionButton 
+            onClick={handleComplete} 
+            isChecking={isChecking} 
+          />
         </footer>
+        {/* Add this near the bottom of your render, before the WritingAssistant */}
+        <CompletionRequirementsModal 
+          isOpen={showRequirementsModal}
+          onClose={() => setShowRequirementsModal(false)}
+          requirements={completionRequirements}
+          sectionTitle={section?.title}
+        />
 
         <WritingAssistant 
           isOpen={isAssistantOpen} 
