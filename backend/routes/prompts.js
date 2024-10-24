@@ -34,21 +34,5 @@ router.get('/latest', async (req, res) => {
   }
 });
 
-// Add this new route here
-router.get('/create-simple-prompt', async (req, res) => {
-  try {
-    const newPrompt = new Prompt({
-      topic: "What is your favorite book and why?",
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
-    });
-    await newPrompt.save();
-    console.log('Created new test prompt:', newPrompt);
-    res.json({ message: 'Test prompt created successfully', prompt: newPrompt });
-  } catch (error) {
-    console.error('Error creating test prompt:', error);
-    res.status(500).json({ message: 'Error creating test prompt', error: error.message });
-  }
-});
-
 console.log('Prompts routes loaded');
 module.exports = router;
