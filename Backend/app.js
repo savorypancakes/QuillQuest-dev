@@ -8,8 +8,20 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
+
+// Add request logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
 
 // Import Routes
 const authRoutes = require('./routes/auth');
@@ -32,7 +44,13 @@ app.get('/api/test', (req, res) => {
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {
-  console.error('Global error handler:', err);
+  console.error('Global error handler:', {
+    error: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method
+  });
+  
   res.status(500).json({ 
     message: 'Server Error', 
     error: err.message,

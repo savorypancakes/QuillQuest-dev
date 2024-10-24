@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDownIcon } from '@heroicons/react/solid';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 export default function EssayGuidance() {
@@ -8,19 +8,34 @@ export default function EssayGuidance() {
   const [postType, setPostType] = useState('discussion');
   const [prompts, setPrompts] = useState([]);
   const [selectedPrompt, setSelectedPrompt] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPrompts = async () => {
       try {
+        setLoading(true);
+        console.log('Attempting to fetch prompts...');
         const response = await api.get('/prompts/all');
+        console.log('Prompts received:', response.data);
         setPrompts(response.data);
+        setError(null);
       } catch (error) {
-        console.error('Error fetching prompts:', error);
+        console.error('Error fetching prompts:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          config: error.config
+        });
+        setError('Failed to load prompts. Please try again later.');
+      } finally {
+        setLoading(false);
       }
     };
     fetchPrompts();
   }, []);
+  
 
   const handleTitleChange = (e) => {
     setTitle(e.target.value);
@@ -91,33 +106,53 @@ export default function EssayGuidance() {
           <label htmlFor="prompt" className="block text-sm font-medium text-gray-700">
             Prompt
           </label>
-          <div className="relative">
-            <select
-              id="prompt"
-              value={selectedPrompt}
-              onChange={handlePromptSelection}
-              className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-md appearance-none"
-            >
-              <option value="">Select Prompt</option>
-              {prompts.map((prompt) => (
-                <option key={prompt._id} value={prompt._id}>
-                  {prompt.topic}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-              <ChevronDownIcon className="h-4 w-4" aria-hidden="true" />
+          {error && (
+            <div className="text-sm text-red-600 bg-red-50 p-2 rounded-md">
+              {error}
             </div>
+          )}
+          <div className="relative">
+            {loading ? (
+              <div className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-500">
+                Loading prompts...
+              </div>
+            ) : (
+              <>
+                <select
+                  id="prompt"
+                  value={selectedPrompt}
+                  onChange={handlePromptSelection}
+                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-md appearance-none"
+                >
+                  <option value="">Select Prompt</option>
+                  {prompts.map((prompt) => (
+                    <option key={prompt._id} value={prompt._id}>
+                      {prompt.topic}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                  <ChevronDownIcon className="h-4 w-4" aria-hidden="true" />
+                </div>
+              </>
+            )}
           </div>
+          {prompts.length === 0 && !loading && !error && (
+            <p className="text-sm text-gray-500">No prompts available</p>
+          )}
         </div>
 
         <button
           type="button"
           onClick={handleNext}
-          Link to="/essaybuilder"
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+          disabled={loading || !selectedPrompt}
+          className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+            loading || !selectedPrompt
+              ? 'bg-purple-400 cursor-not-allowed'
+              : 'bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500'
+          }`}
         >
-          Next
+          {loading ? 'Loading...' : 'Next'}
         </button>
       </div>
     </div>

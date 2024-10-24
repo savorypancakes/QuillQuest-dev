@@ -55,15 +55,17 @@ const generatePrompt = async () => {
         "Content-Type": "application/json"
       }
     });
-
+    
+    const promptTopic = response.data.choices[0].message.content.trim();
+    
     const newPrompt = new Prompt({ 
-      topic: newPromptTopic,
-      expiresAt: new Date(+new Date() + 7*24*60*60*1000) // 7 days from now
+      topic: promptTopic,
+      expiresAt: new Date(+new Date() + 7*24*60*60*1000)
     });
     await newPrompt.save();
     
-    console.log('Received response from GROQ API');
-    return response.data.choices[0].message.content.trim();
+    console.log('New prompt saved:', promptTopic);
+    return promptTopic;
   } catch (error) {
     console.error('Error generating prompt with GROQ:', error.response ? error.response.data : error.message);
     throw error;
