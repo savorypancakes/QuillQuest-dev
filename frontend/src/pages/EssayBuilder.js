@@ -121,11 +121,29 @@ export default function EssayBuilder() {
     localStorage.removeItem('essaySections');
     localStorage.removeItem('essayInfo');
     
-    // Clear any other related localStorage items if they exist
+    // Clear ALL section-related localStorage items
     sections.forEach(section => {
+      // Clear content
       localStorage.removeItem(`essayContent_${section.id}`);
+      // Clear requirements
+      localStorage.removeItem(`sectionRequirements_${section.id}`);
+      // Clear analysis
+      localStorage.removeItem(`sectionAnalysis_${section.id}`);
     });
-
+  
+    // Clear any other potential essay-related items
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (
+        key.startsWith('essay') || 
+        key.startsWith('section') || 
+        key.includes('Requirements') ||
+        key.includes('Analysis')
+      )) {
+        localStorage.removeItem(key);
+      }
+    }
+  
     // Navigate back to EssayGuidance
     navigate('/essayguidance');
   };

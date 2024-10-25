@@ -23,12 +23,22 @@ app.use((req, res, next) => {
   next();
 });
 
-// Import Routes
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const postRoutes = require('./routes/posts');
 const commentRoutes = require('./routes/comments');
 const promptRoutes = require('./routes/prompts');
+
+// Debug middleware for prompts route
+app.use('/api/prompts', (req, res, next) => {
+  console.log('Prompts route accessed:', {
+    method: req.method,
+    path: req.path,
+    query: req.query,
+    body: req.body
+  });
+  next();
+});
 
 // Use Routes
 app.use('/api/auth', authRoutes);

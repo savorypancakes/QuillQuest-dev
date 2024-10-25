@@ -1,5 +1,30 @@
 import { ChatGroq } from "@langchain/groq";
 
+const evaluateCriteria = {
+  introduction: `
+    - Clear thesis statement present
+    - Sufficient background context
+    - Main points clearly outlined
+    - Engaging opening
+  `,
+  bodyParagraph: `
+    - Clear topic sentence that directly supports the thesis
+    - Strong supporting evidence and examples
+    - Thorough analysis explaining the evidence
+    - Clear connection back to thesis/main argument
+    - Smooth transitions between ideas
+    - Proper paragraph structure and organization
+  `,
+  conclusion: `
+    - Effective restatement of thesis
+    - Comprehensive summary of main points
+    - Meaningful final insights or implications
+    - Strong closing statement
+    - Clear sense of closure
+    - No new arguments introduced
+  `
+};
+
 // Function to parse thesis statement and extract main points
 export const parseThesisPoints = async (thesisContent) => {
   const llm = new ChatGroq({
@@ -29,7 +54,11 @@ export const parseThesisPoints = async (thesisContent) => {
   ]);
 
   try {
-    return JSON.parse(response.content);
+    const parsedResponse = JSON.parse(response.content);
+    if (!parsedResponse.mainPoints || !Array.isArray(parsedResponse.mainPoints)) {
+      throw new Error('Invalid thesis points structure');
+    }
+    return parsedResponse;
   } catch (error) {
     console.error('Error parsing thesis points:', error);
     throw new Error('Failed to parse thesis points');
@@ -38,8 +67,12 @@ export const parseThesisPoints = async (thesisContent) => {
 
 // Function to generate new body sections
 export const generateBodySections = (mainPoints) => {
+  if (!Array.isArray(mainPoints)) {
+    throw new Error('Invalid main points structure');
+  }
+  
   return mainPoints.map((point, index) => ({
-    id: `body-${index + 1}`,
+    id: `body-${Date.now()}-${index + 1}`,
     title: `Body Paragraph ${index + 1}: ${point.point}`,
     type: 'body',
     percentage: 0,
@@ -57,56 +90,110 @@ export const checkSectionCompleteness = async (content, sectionType, previousCon
     maxTokens: 2048,
   });
 
+  // Determine the section type and get appropriate criteria
+  let criteria;
+  if (sectionType.toLowerCase().includes('introduction')) {
+    criteria = evaluateCriteria.introduction;
+  } else if (sectionType.toLowerCase().includes('body paragraph')) {
+    criteria = evaluateCriteria.bodyParagraph;
+  } else if (sectionType.toLowerCase().includes('conclusion')) {
+    criteria = evaluateCriteria.conclusion;
+  } else {
+    throw new Error('Invalid section type');
+  }
+
   const systemMessage = {
     role: 'system',
-    content: `You are an advanced essay section analyzer. Evaluate the ${sectionType} based on these criteria:
+    content: `You are a JSON-only response analyzer for essays. Your task is to evaluate the given ${sectionType} section and return a strict JSON object.
 
-    ${sectionType.toLowerCase() === 'introduction' ? `
-    - Clear thesis statement present
-    - Sufficient background context
-    - Main points clearly outlined
-    - Engaging opening
-    ` : sectionType.toLowerCase() === 'body' ? `
-    - Clear topic sentence
-    - Strong supporting evidence
-    - Thorough analysis
-    - Smooth transitions
-    - Connection to thesis
-    ` : `
-    - Effective summary of main points
-    - Thesis restatement
-    - Meaningful final insight
-    - Strong closing
-    `}
+IMPORTANT: DO NOT include any explanatory text. Return ONLY a valid JSON object matching this structure:
+{
+  "isComplete": false,
+  "completionStatus": {
+    "met": [],
+    "missing": []
+  },
+  "feedbackItems": [],
+  "suggestedImprovements": []
+}
 
-    ${previousContent ? 'Also evaluate coherence with the previous section content provided.' : ''}
+Evaluate against these criteria:
+${criteria}
 
-    Return ONLY a JSON object with this structure:
-    {
-      "isComplete": boolean,
-      "completionStatus": {
-        "met": ["criteria that were met"],
-        "missing": ["criteria that need work"]
-      },
-      "feedbackItems": ["specific feedback items"],
-      "thesisStatement": string (only if this is an introduction),
-      "suggestedImprovements": ["specific suggestions for improvement"]
-    }`
+Rules:
+1. isComplete must be true ONLY if ALL criteria are met
+2. met array should contain criteria that were successfully fulfilled
+3. missing array should contain criteria that need improvement
+4. feedbackItems should contain specific issues found
+5. suggestedImprovements should contain actionable suggestions`
   };
 
   const userMessage = {
     role: 'user',
-    content: `Analyze this ${sectionType}:
-    ${previousContent ? `Previous section content: "${previousContent}"` : ''}
-    Current section content: "${content}"`
+    content: `${content}`
   };
 
-  const response = await llm.invoke([systemMessage, userMessage]);
-  
   try {
-    return JSON.parse(response.content);
+    const response = await llm.invoke([systemMessage, userMessage]);
+    
+    // Try to extract JSON if there's any extra text
+    let jsonStr = response.content;
+    if (jsonStr.includes('{')) {
+      jsonStr = jsonStr.substring(jsonStr.indexOf('{'), jsonStr.lastIndexOf('}') + 1);
+    }
+
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(jsonStr);
+    } catch (parseError) {
+      console.error('Failed to parse response:', jsonStr);
+      // Return a default response structure
+      return {
+        isComplete: false,
+        completionStatus: {
+          met: [],
+          missing: ['Failed to analyze section - please try again']
+        },
+        feedbackItems: ['Analysis failed - please revise and try again'],
+        suggestedImprovements: ['Please try submitting again']
+      };
+    }
+
+    // Validate and normalize the response
+    const normalizedResponse = {
+      isComplete: false,
+      completionStatus: {
+        met: Array.isArray(parsedResponse?.completionStatus?.met) 
+          ? parsedResponse.completionStatus.met 
+          : [],
+        missing: Array.isArray(parsedResponse?.completionStatus?.missing) 
+          ? parsedResponse.completionStatus.missing 
+          : ['Requirements need to be checked again']
+      },
+      feedbackItems: Array.isArray(parsedResponse?.feedbackItems) 
+        ? parsedResponse.feedbackItems 
+        : [],
+      suggestedImprovements: Array.isArray(parsedResponse?.suggestedImprovements) 
+        ? parsedResponse.suggestedImprovements 
+        : []
+    };
+
+    // Force isComplete to false if there are missing criteria
+    normalizedResponse.isComplete = normalizedResponse.completionStatus.missing.length === 0;
+
+    return normalizedResponse;
+
   } catch (error) {
-    console.error('Error parsing completeness check:', error);
-    throw new Error('Failed to analyze section completeness');
+    console.error('Error during section analysis:', error);
+    // Return a graceful fallback response instead of throwing
+    return {
+      isComplete: false,
+      completionStatus: {
+        met: [],
+        missing: ['Analysis failed - please try again']
+      },
+      feedbackItems: ['Unable to complete analysis'],
+      suggestedImprovements: ['Please revise and try submitting again']
+    };
   }
 };

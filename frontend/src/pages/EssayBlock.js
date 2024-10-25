@@ -13,8 +13,8 @@ import { checkSectionCompleteness, parseThesisPoints, generateBodySections } fro
 import CompletionButton from '../components/CompletionButton';
 import EssayPreviewModal from '../components/EssayPreviewModal';
 import SectionPreview from '../components/SectionPreview';
-import { SectionRequirements } from '../components/SectionRequirements';
 import { CompletionRequirementsModal } from '../components/CompletionRequirementsModal';
+
 
 
 
@@ -50,16 +50,17 @@ const getCategoryDisplayName = (category) => {
 
 
 // Replace the entire SidebarItem component with this version:
-const SidebarItem = ({ title, progress, isActive, isLast, id, onSelect }) => {
+// Update the SidebarItem component to remove the duplicate preview
+const SidebarItem = ({ title, progress, isActive, isLast, id, onSelect, onDelete }) => {
   const hasSavedContent = localStorage.getItem(`essayContent_${id}`)?.trim();
   const requirements = JSON.parse(localStorage.getItem(`sectionRequirements_${id}`) || 'null');
-  const isClickable = hasSavedContent || progress || isActive;
+  const isBodyParagraph = title.toLowerCase().includes('body paragraph');
   
   return (
     <div className="space-y-1">
       <div className="flex items-center space-x-3 py-2">
         <div 
-          className={`relative ${isClickable ? 'cursor-pointer' : 'cursor-not-allowed'} group`}
+          className="relative cursor-pointer group"
           onClick={onSelect}
         >
           <div className={`w-6 h-6 rounded-full 
@@ -67,7 +68,7 @@ const SidebarItem = ({ title, progress, isActive, isLast, id, onSelect }) => {
               hasSavedContent ? 'bg-purple-400' : 
               'bg-purple-200'} 
             flex items-center justify-center transition-colors
-            ${isClickable ? 'hover:bg-purple-500' : ''}`}
+            hover:bg-purple-500`}
           >
             <div className={`w-4 h-4 rounded-full 
               ${isActive ? 'bg-white' : 'bg-purple-600'}`} 
@@ -75,16 +76,9 @@ const SidebarItem = ({ title, progress, isActive, isLast, id, onSelect }) => {
             />
           </div>
           {!isLast && <div className="absolute top-6 left-3 w-0.5 h-full bg-purple-200" />}
-          
-          {!isClickable && (
-            <div className="absolute left-8 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded 
-              opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-              {hasSavedContent ? 'Continue writing' : 'Start this section'}
-            </div>
-          )}
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 flex items-center justify-between">
           <span className={`text-gray-700 
             ${isActive ? 'font-bold' : ''} 
             ${hasSavedContent ? 'text-purple-600' : ''}`}
@@ -96,10 +90,25 @@ const SidebarItem = ({ title, progress, isActive, isLast, id, onSelect }) => {
               </span>
             )}
           </span>
+          {isBodyParagraph && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.confirm('Are you sure you want to delete this body paragraph?')) {
+                  onDelete(id);
+                }
+              }}
+              className="p-1 text-red-500 hover:text-red-700 ml-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
       
-      {/* Requirements display */}
+      {/* Rest of the component remains the same */}
       {requirements && (
         <div className="ml-9 text-xs bg-red-50 p-2 rounded-md">
           <div className="font-medium text-red-800 mb-1">Missing Requirements:</div>
@@ -120,8 +129,16 @@ const SidebarItem = ({ title, progress, isActive, isLast, id, onSelect }) => {
           )}
         </div>
       )}
-      
 
+      {/* Preview for all sections with content */}
+      {hasSavedContent && !isActive && (
+        <div className="ml-9 mt-1">
+          <SectionPreview 
+            sectionId={id}
+            title={title}
+          />
+        </div>
+      )}
     </div>
   );
 };
@@ -143,20 +160,33 @@ export default function EssayBlock() {
   const [isChecking, setIsChecking] = useState(false);
   const [showRequirementsModal, setShowRequirementsModal] = useState(false);
   const [completionRequirements, setCompletionRequirements] = useState(null);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [isRevision] = useState(false);
+  const [hasExistingBodyParagraphs, setHasExistingBodyParagraphs] = useState(false);
   
 
+  // Remove the duplicate useEffect and keep this single one
   useEffect(() => {
-    const savedContent = localStorage.getItem(`essayContent_${sectionId}`);
-    if (savedContent) {
-      setEssayContent(savedContent);
-    }
-  }, [sectionId]);
+    // Only load content for the current section if we haven't loaded it yet
+    const loadSectionContent = () => {
+      const savedContent = localStorage.getItem(`essayContent_${sectionId}`);
+      if (savedContent) {
+        setEssayContent(savedContent);
+      } else {
+        // Only reset to empty if there's no saved content
+        setEssayContent('');
+      }
+    };
 
-  useEffect(() => {
-    if (essayContent.trim()) {
-      localStorage.setItem(`essayContent_${sectionId}`, essayContent);
-    }
-  }, [sectionId, essayContent]);
+    // Reset UI states but preserve content
+    setHighlightedContent('');
+    setErrors({});
+    setShowErrors(false);
+    setHasChecked(false);
+    setScore(0);
+    
+    loadSectionContent();
+  }, [sectionId]);
 
   useEffect(() => {
     if (showErrors && Object.keys(errors).length > 0) {
@@ -164,6 +194,83 @@ export default function EssayBlock() {
       setHighlightedContent(highlighted);
     }
   }, [errors, essayContent, showErrors]);
+
+  useEffect(() => {
+    if (allSections) {
+      const bodyParagraphs = allSections.filter(s => 
+        s.title.toLowerCase().includes('body paragraph')
+      );
+      setHasExistingBodyParagraphs(bodyParagraphs.length > 0);
+    }
+  }, [allSections]);
+
+  useEffect(() => {
+    const autoSaveTimer = setInterval(() => {
+      if (sectionId) {
+        // Save even if content is empty - this is the key change
+        localStorage.setItem(`essayContent_${sectionId}`, essayContent);
+      }
+    }, 3000); // Auto-save every 3 seconds
+
+    return () => clearInterval(autoSaveTimer);
+  }, [essayContent, sectionId]);
+
+  const handleContentChange = (e) => {
+    const newContent = e.target.value;
+    setEssayContent(newContent);
+    // Immediately save the content, even if empty
+    localStorage.setItem(`essayContent_${sectionId}`, newContent);
+  };
+
+  const handleDeleteBodyParagraph = (paragraphId) => {
+    // Filter out the deleted section
+    const updatedSections = allSections.filter(s => s.id !== paragraphId);
+    
+    // Renumber remaining body paragraphs
+    const finalSections = updatedSections.map(s => {
+      if (s.title.toLowerCase().includes('body paragraph')) {
+        const bodyParagraphs = updatedSections.filter(sec => 
+          sec.title.toLowerCase().includes('body paragraph')
+        );
+        const index = bodyParagraphs.findIndex(bp => bp.id === s.id) + 1;
+        return {
+          ...s,
+          title: `Body Paragraph ${index}`
+        };
+      }
+      return s;
+    });
+  
+    // Remove the content and requirements from localStorage
+    localStorage.removeItem(`essayContent_${paragraphId}`);
+    localStorage.removeItem(`sectionRequirements_${paragraphId}`);
+  
+    // If the deleted section was the current section, navigate to another section
+    if (paragraphId === sectionId) {
+      const currentIndex = allSections.findIndex(s => s.id === sectionId);
+      const nextSection = finalSections[Math.min(currentIndex, finalSections.length - 1)];
+      
+      navigate(`/essayblock/${nextSection.id}`, {
+        state: {
+          section: nextSection,
+          allSections: finalSections,
+          essayInfo
+        }
+      });
+    } else {
+      // Just update the state
+      if (location.state) {
+        location.state.allSections = finalSections;
+      }
+      navigate(`/essayblock/${sectionId}`, {
+        state: {
+          section,
+          allSections: finalSections,
+          essayInfo
+        }
+      });
+    }
+  };  
 
   const createHighlightedText = (text, errorList) => {
     if (!text || !errorList) return '';
@@ -286,25 +393,11 @@ export default function EssayBlock() {
 
   // Add this function to your EssayBlock component
   // Replace your current handleSectionSelect function with this version
-const handleSectionSelect = (selectedSection) => {
-  // Check if there's saved content for the selected section
-  const hasSavedContent = localStorage.getItem(`essayContent_${selectedSection.id}`)?.trim();
-  
-  // Allow navigation if:
-  // 1. The section has any saved content, or
-  // 2. It's the current section, or
-  // 3. The section is already completed, or
-  // 4. The previous section has content (to allow natural progression)
-  const selectedIndex = allSections.findIndex(s => s.id === selectedSection.id);
-  const previousSection = selectedIndex > 0 ? allSections[selectedIndex - 1] : null;
-  const previousHasContent = previousSection 
-    ? localStorage.getItem(`essayContent_${previousSection.id}`)?.trim()
-    : true; // If it's the first section, allow access
+  // Replace your current handleSectionSelect function with this simplified version
+  const handleSectionSelect = (selectedSection) => {
+    // Save current section's content before navigating, even if empty
+    localStorage.setItem(`essayContent_${sectionId}`, essayContent);
 
-  if (hasSavedContent || 
-      selectedSection.id === sectionId || 
-      selectedSection.percentage === 100 || 
-      previousHasContent) {
     navigate(`/essayblock/${selectedSection.id}`, {
       state: {
         section: selectedSection,
@@ -312,8 +405,7 @@ const handleSectionSelect = (selectedSection) => {
         essayInfo
       }
     });
-  }
-};
+  };
 
   const toggleAssistant = () => setIsAssistantOpen(!isAssistantOpen);
 
@@ -324,12 +416,12 @@ const handleSectionSelect = (selectedSection) => {
       alert(`Please wait ${remainingTime} seconds before checking again.`);
       return;
     }
-
+  
     if (!essayContent.trim()) {
       alert('Please write something before checking for errors.');
       return;
     }
-
+  
     setIsChecking(true);
     try {
       const categorizedErrors = await checkEssayErrors(essayContent);
@@ -338,18 +430,18 @@ const handleSectionSelect = (selectedSection) => {
       setLastCheckTime(now);
       setShowErrors(true);
       setHasChecked(true);
-
+  
       const firstCategoryWithErrors = ERROR_CATEGORIES.find(
         category => categorizedErrors[category]?.length > 0
       );
       if (firstCategoryWithErrors) {
         setActiveErrorCategory(firstCategoryWithErrors);
       }
-
+  
       const totalErrors = Object.values(categorizedErrors).flat().length;
       const newScore = Math.max(0, score + (10 - totalErrors));
       setScore(newScore);
-
+  
       if (totalErrors === 0) {
         alert('Great job! No errors found in this section. 🎉');
       }
@@ -361,92 +453,275 @@ const handleSectionSelect = (selectedSection) => {
     }
   };
 
-  // Update your handleComplete function
-  const handleComplete = async () => {
-    if (!essayContent.trim()) {
-      alert('Please write some content before completing this section.');
-      return;
-    }
+
+// Update the handleComplete function
+const handleComplete = async () => {
+  if (!essayContent.trim()) {
+    alert('Please write some content before completing this section.');
+    return;
+  }
+
+  // Save current content before proceeding
+  localStorage.setItem(`essayContent_${sectionId}`, essayContent);
   
-    setIsChecking(true);
-    try {
-      const currentSectionIndex = allSections.findIndex(s => s.id === sectionId);
-      const prevSectionId = currentSectionIndex > 0 ? allSections[currentSectionIndex - 1].id : null;
-      const previousContent = prevSectionId ? localStorage.getItem(`essayContent_${prevSectionId}`) : null;
-  
-      const completenessAnalysis = await checkSectionCompleteness(
-        essayContent, 
-        section?.title,
-        previousContent
-      );
-  
-      if (!completenessAnalysis.isComplete) {
-        const requirements = {
+  setIsCompleting(true);
+  try {
+    const currentSectionIndex = allSections.findIndex(s => s.id === sectionId);
+    const nextSectionIndex = currentSectionIndex + 1;
+    const prevSectionId = currentSectionIndex > 0 ? allSections[currentSectionIndex - 1].id : null;
+    const previousContent = prevSectionId ? localStorage.getItem(`essayContent_${prevSectionId}`) : null;
+    const hasPreviousContent = localStorage.getItem(`essayContent_${sectionId}`)?.trim();
+
+    const completenessAnalysis = await checkSectionCompleteness(
+      essayContent, 
+      section?.title,
+      previousContent
+    );
+
+    const isIntroduction = section?.title.toLowerCase().includes('introduction');
+    const isBodyParagraph = section?.title.toLowerCase().includes('body paragraph');
+    const isConclusion = section?.title.toLowerCase().includes('conclusion');
+    const isRevisionAttempt = hasPreviousContent && isRevision;
+
+    // Handle incomplete sections
+    if (!completenessAnalysis.isComplete) {
+      if (isIntroduction) {
+        setCompletionRequirements({
           missing: completenessAnalysis.completionStatus.missing,
-          improvements: completenessAnalysis.suggestedImprovements
-        };
-        
-        localStorage.setItem(`sectionRequirements_${sectionId}`, JSON.stringify(requirements));
-        setCompletionRequirements(requirements);
-        setShowRequirementsModal(true);
-        return;
-      }
-  
-      // Clear requirements if section is complete
-      localStorage.removeItem(`sectionRequirements_${sectionId}`);
-      setCompletionRequirements(null);
-  
-      // Store the completed section content
-      localStorage.setItem(`essayContent_${sectionId}`, essayContent);
-      localStorage.setItem(`sectionAnalysis_${sectionId}`, JSON.stringify(completenessAnalysis));
-  
-      // Update sections with completion status
-      const updatedSections = allSections.map(s => 
-        s.id === sectionId ? { ...s, percentage: 100 } : s
-      );
-  
-      // Handle introduction-specific logic for body generation
-      if (section?.title.toLowerCase().includes('introduction')) {
-        const thesisPoints = await parseThesisPoints(completenessAnalysis.thesisStatement);
-        const newBodySections = generateBodySections(thesisPoints.mainPoints);
-        
-        const introIndex = currentSectionIndex;
-        const conclusionIndex = allSections.findIndex(s => 
-          s.title.toLowerCase().includes('conclusion')
-        );
-        
-        const sectionsWithBody = [
-          ...updatedSections.slice(0, introIndex + 1),
-          ...newBodySections,
-          ...(conclusionIndex >= 0 ? updatedSections.slice(conclusionIndex) : [])
-        ];
-  
-        // Navigate to the first body section
-        const nextSectionId = newBodySections[0].id;
-        navigate(`/essayblock/${nextSectionId}`, {
-          state: {
-            section: newBodySections[0],
-            allSections: sectionsWithBody,
-            essayInfo: {
-              ...essayInfo,
-              thesisPoints: thesisPoints.mainPoints
+          improvements: completenessAnalysis.suggestedImprovements,
+          isRevision: isRevisionAttempt,
+          hasBodyParagraphs: hasExistingBodyParagraphs,
+          isComplete: false,
+          onAddBodyParagraph: () => {
+            localStorage.setItem(`essayContent_${sectionId}`, essayContent);
+            localStorage.setItem(`sectionRequirements_${sectionId}`, JSON.stringify({
+              missing: completenessAnalysis.completionStatus.missing,
+              improvements: completenessAnalysis.suggestedImprovements
+            }));
+
+            const newBodySection = {
+              id: `body-${Date.now()}`,
+              title: `Body Paragraph ${nextSectionIndex}`,
+              type: 'body',
+              percentage: 0
+            };
+
+            const updatedSections = [
+              ...allSections.slice(0, nextSectionIndex),
+              newBodySection,
+              ...allSections.slice(nextSectionIndex)
+            ].map(s => s.id === sectionId ? { ...s, percentage: 50 } : s);
+
+            setShowRequirementsModal(false);
+            navigate(`/essayblock/${newBodySection.id}`, {
+              state: {
+                section: newBodySection,
+                allSections: updatedSections,
+                essayInfo
+              }
+            });
+          },
+          onAcceptChanges: isRevisionAttempt ? () => {
+            const updatedSections = allSections.map(s => 
+              s.id === sectionId ? { ...s, percentage: 50 } : s
+            );
+            
+            localStorage.setItem(`essayContent_${sectionId}`, essayContent);
+            localStorage.setItem(`sectionRequirements_${sectionId}`, JSON.stringify({
+              missing: completenessAnalysis.completionStatus.missing,
+              improvements: completenessAnalysis.suggestedImprovements
+            }));
+
+            setShowRequirementsModal(false);
+            if (nextSectionIndex < updatedSections.length) {
+              navigate(`/essayblock/${updatedSections[nextSectionIndex].id}`, {
+                state: {
+                  section: updatedSections[nextSectionIndex],
+                  allSections: updatedSections,
+                  essayInfo
+                }
+              });
             }
+          } : undefined
+        });
+      // Update the body paragraph complete section handling:
+      } else if (isBodyParagraph) {
+        // Show modal for completed body paragraph
+        setCompletionRequirements({
+          missing: [],
+          improvements: [],
+          isComplete: true,
+          isRevision: isRevisionAttempt,
+          hasBodyParagraphs: hasExistingBodyParagraphs,
+          onContinue: () => {
+            if (nextSectionIndex < updatedSections.length) {
+              const nextSection = updatedSections[nextSectionIndex];
+              setShowRequirementsModal(false);
+              navigate(`/essayblock/${nextSection.id}`, {
+                state: {
+                  section: nextSection,
+                  allSections: updatedSections,
+                  essayInfo
+                }
+              });
+            }
+          },
+          onMoveToConclusion: () => {
+            const conclusionSection = allSections.find(s => 
+              s.title.toLowerCase().includes('conclusion')
+            ) || {
+              id: `conclusion-${Date.now()}`,
+              title: 'Conclusion',
+              type: 'conclusion',
+              percentage: 0
+            };
+
+            const updatedSections = allSections.map(s => 
+              s.id === sectionId ? { ...s, percentage: 100 } : s
+            );
+
+            if (!allSections.find(s => s.title.toLowerCase().includes('conclusion'))) {
+              updatedSections.push(conclusionSection);
+            }
+
+            setShowRequirementsModal(false);
+            navigate(`/essayblock/${conclusionSection.id}`, {
+              state: {
+                section: conclusionSection,
+                allSections: updatedSections,
+                essayInfo
+              }
+            });
+          },
+          onAddNewBodyParagraph: () => {
+            const newBodySection = {
+              id: `body-${Date.now()}`,
+              title: `Body Paragraph ${allSections.filter(s => 
+                s.title.toLowerCase().includes('body paragraph')
+              ).length + 1}`,
+              type: 'body',
+              percentage: 0
+            };
+
+            const updatedSections = [
+              ...allSections,
+              newBodySection
+            ].map(s => s.id === sectionId ? { ...s, percentage: 100 } : s);
+
+            setShowRequirementsModal(false);
+            navigate(`/essayblock/${newBodySection.id}`, {
+              state: {
+                section: newBodySection,
+                allSections: updatedSections,
+                essayInfo
+              }
+            });
           }
         });
-      } else {
-        // For non-introduction sections, navigate to the next section if available
-        const nextSectionIndex = currentSectionIndex + 1;
-        if (nextSectionIndex < updatedSections.length) {
-          const nextSection = updatedSections[nextSectionIndex];
-          navigate(`/essayblock/${nextSection.id}`, {
-            state: {
-              section: nextSection,
-              allSections: updatedSections,
-              essayInfo
-            }
-          });
-        } else {
-          // If this was the last section, navigate back to essay builder
+        setShowRequirementsModal(true);
+        setIsCompleting(false);
+        } else if (isConclusion) {
+        setCompletionRequirements({
+          missing: completenessAnalysis.completionStatus.missing,
+          improvements: completenessAnalysis.suggestedImprovements,
+          isRevision: isRevisionAttempt,
+          isComplete: false,
+          onAcceptChanges: isRevisionAttempt ? () => {
+            const updatedSections = allSections.map(s => 
+              s.id === sectionId ? { ...s, percentage: 50 } : s
+            );
+            
+            localStorage.setItem(`essayContent_${sectionId}`, essayContent);
+            setShowRequirementsModal(false);
+            
+            navigate('/essaybuilder', {
+              state: {
+                updatedSections,
+                essayInfo
+              }
+            });
+          } : undefined,
+          onCompleteEssay: () => {
+            navigate('/essaybuilder', {
+              state: {
+                updatedSections: allSections,
+                essayInfo
+              }
+            });
+          }
+        });
+      }
+      setShowRequirementsModal(true);
+      setIsCompleting(false);
+      return;
+    }
+
+    // Handle complete sections
+    localStorage.setItem(`essayContent_${sectionId}`, essayContent);
+    localStorage.removeItem(`sectionRequirements_${sectionId}`);
+
+    const updatedSections = allSections.map(s => 
+      s.id === sectionId ? { ...s, percentage: 100 } : s
+    );
+
+    // Handle complete sections based on type
+    if (isIntroduction && !isRevisionAttempt) {
+      try {
+        const thesisPoints = await parseThesisPoints(essayContent);
+        const generatedSections = await generateBodySections(thesisPoints.mainPoints);
+        
+        const sectionsWithBody = [
+          ...updatedSections.slice(0, nextSectionIndex),
+          ...generatedSections,
+          ...updatedSections.slice(nextSectionIndex)
+        ];
+
+        navigate(`/essayblock/${generatedSections[0].id}`, {
+          state: {
+            section: generatedSections[0],
+            allSections: sectionsWithBody,
+            essayInfo
+          }
+        });
+      } catch (error) {
+        console.error('Error generating body sections:', error);
+        alert('Error generating body sections from thesis. Please review your thesis statement and try again.');
+        setIsCompleting(false);
+        return;
+      }
+    } else if (isBodyParagraph) {
+      // When the body paragraph is incomplete, show the missing requirements
+      setCompletionRequirements({
+        missing: completenessAnalysis.completionStatus.missing || [], // Pass through the missing requirements
+        improvements: completenessAnalysis.suggestedImprovements || [],
+        isRevision: isRevisionAttempt,
+        hasBodyParagraphs: hasExistingBodyParagraphs,
+        isComplete: completenessAnalysis.isComplete, // Use the actual completeness status
+        onContinue: () => {
+          // Your existing continue logic
+          if (nextSectionIndex < updatedSections.length) {
+            const nextSection = updatedSections[nextSectionIndex];
+            setShowRequirementsModal(false);
+            navigate(`/essayblock/${nextSection.id}`, {
+              state: {
+                section: nextSection,
+                allSections: updatedSections,
+                essayInfo
+              }
+            });
+          }
+        },
+      });
+      setShowRequirementsModal(true);
+      setIsCompleting(false);
+    } else if (isConclusion) {
+      setCompletionRequirements({
+        missing: [],
+        improvements: [],
+        isComplete: true,
+        isRevision: isRevisionAttempt,
+        onCompleteEssay: () => {
+          setShowRequirementsModal(false);
           navigate('/essaybuilder', {
             state: {
               updatedSections,
@@ -454,14 +729,17 @@ const handleSectionSelect = (selectedSection) => {
             }
           });
         }
-      }
-    } catch (error) {
-      console.error('Error during completion:', error);
-      alert('There was an error processing the section. Please try again.');
-    } finally {
-      setIsChecking(false);
+      });
+      setShowRequirementsModal(true);
+      setIsCompleting(false);
     }
-  };
+  } catch (error) {
+    console.error('Error during completion:', error);
+    alert('There was an error processing the section. Please try again.');
+  } finally {
+    setIsCompleting(false);
+  }
+};
 
   const renderErrorPanel = () => {
     if (!errors[activeErrorCategory]?.length) {
@@ -530,6 +808,7 @@ const handleSectionSelect = (selectedSection) => {
                 isActive={s.id === sectionId}
                 isLast={index === allSections.length - 1}
                 onSelect={() => handleSectionSelect(s)}
+                onDelete={handleDeleteBodyParagraph}
               />
               {s.percentage === 100 && s.id !== sectionId && (
                 <div className="ml-9 mt-1">
@@ -575,7 +854,7 @@ const handleSectionSelect = (selectedSection) => {
               <div className="h-[calc(100%-60px)] p-4 overflow-hidden">
                 <textarea
                   value={essayContent}
-                  onChange={(e) => setEssayContent(e.target.value)}
+                  onChange={handleContentChange}
                   className="w-full h-full resize-none focus:outline-none font-mono overflow-auto"
                   placeholder={`Start writing your essay here...`}
                 />
@@ -671,7 +950,7 @@ const handleSectionSelect = (selectedSection) => {
           </button>
           <CompletionButton 
             onClick={handleComplete} 
-            isChecking={isChecking} 
+            isCompleting={isCompleting} 
           />
         </footer>
         {/* Add this near the bottom of your render, before the WritingAssistant */}

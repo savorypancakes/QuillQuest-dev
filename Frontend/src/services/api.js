@@ -1,15 +1,13 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
-// or if you prefer:
-// const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 5000, // Add a timeout to avoid hanging requests
+  timeout: 15000, // Increase timeout to 15 seconds
 });
 
 // Add request interceptor
@@ -19,12 +17,26 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // Log the full URL being requested
-    console.log('Making request to:', config.baseURL + config.url);
+    console.log('Making request to:', `${config.baseURL}${config.url}`);
     return config;
   },
   (error) => {
-    console.error('Request interceptor error:', error);
+    console.error('Request error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.code === 'ECONNABORTED') {
+      console.error('Request timed out');
+    } else if (!error.response) {
+      console.error('Network error:', error.message);
+    } else {
+      console.error('Response error:', error.response.status, error.response.data);
+    }
     return Promise.reject(error);
   }
 );

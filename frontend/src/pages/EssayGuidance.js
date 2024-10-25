@@ -23,10 +23,15 @@ export default function EssayGuidance() {
         setError(null);
       } catch (error) {
         console.error('Error fetching prompts:', {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-          config: error.config
+          message: error?.message || 'Unknown error',
+          status: error?.response?.status,
+          statusText: error?.response?.statusText,
+          data: error?.response?.data,
+          config: {
+            url: error?.config?.url,
+            method: error?.config?.method,
+            baseURL: error?.config?.baseURL
+          }
         });
         setError('Failed to load prompts. Please try again later.');
       } finally {
