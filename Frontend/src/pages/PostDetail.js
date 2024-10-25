@@ -108,7 +108,7 @@ const PostDetail = () => {
       <Navbar />
       <Link to="/home" className="back-link">← Back to Home</Link>
       <div className='flex'>
-        <div className="bg-[#9500F0] text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]"></div>
+        <div className="bg-[#9500F0] text-white font-bold w-10 h-10 flex items-center justify-center overflow-hidden text-xl rounded-full mr-5"></div>
         <div className="flex flex-col items-baseline">
           <span className='font-semibold text-black'> {post.userId?.username || 'Unknown'}</span>
           <span className='text-[gray] text-[0.85rem]'>Posted on: {new Date(post.createdAt).toLocaleString()}</span>
@@ -117,7 +117,9 @@ const PostDetail = () => {
 
 
       <h2 className="text-black font-bold text-2xl text-left mt-5 mb-[15px] mx-0">{post.title}</h2>
-
+      <div className="flex mb-2.5">
+          {post.postType && <div className="bg-[#9500F0] text-white text-[0.9rem] inline-block px-4 py-1 rounded-[1rem]">{post.postType}</div>}
+      </div>
       <div className="pb-5">
         <div dangerouslySetInnerHTML={{ __html: post.content }} />
       </div>

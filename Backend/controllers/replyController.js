@@ -2,6 +2,7 @@
 
 const Reply = require('../models/Reply');
 const Comment = require('../models/Comment');
+const Notification = require('../models/Notification'); // Import Notification model
 
 // @desc    Create a new reply
 // @route   POST /api/comments/:commentId/replies
@@ -30,6 +31,18 @@ exports.createReply = async (req, res, next) => {
     // Add the reply to the comment's replies array
     comment.replies.push(savedReply._id);
     await comment.save();
+
+    // Create a notification for the comment's author (if the replier is not the original author)
+    if (comment.userId.toString() !== userId.toString()) {
+      const notification = new Notification({
+        userId: comment.userId,
+        message: `${req.user.username} replied to your comment.`,
+        type: 'reply',
+        postId: comment.postId,
+      });
+      await notification.save();
+    }
+
     res.status(201).json(savedReply);
   } catch (error) {
     next(error);
