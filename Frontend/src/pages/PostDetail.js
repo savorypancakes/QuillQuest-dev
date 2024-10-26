@@ -109,7 +109,9 @@ const PostDetail = () => {
         <Link to="/home" className="block text-purple-600 mb-5">← Back to Home</Link>
         <div className="bg-white p-5 rounded-lg">
           <div className='flex items-center mb-5'>
-            <div className="bg-[#9500F0] text-white font-bold w-10 h-10 flex items-center justify-center overflow-hidden text-xl rounded-full mr-5"></div>
+            <div className="bg-[#9500F0] text-white font-bold w-10 h-10 flex items-center justify-center overflow-hidden text-xl rounded-full mr-5">
+              {post.userId.username.charAt(0).toUpperCase()}
+            </div>
             <div className="flex flex-col">
               <div className='flex'>
                 <span className='font-semibold text-black'>{post.userId?.username || 'Unknown'}</span>

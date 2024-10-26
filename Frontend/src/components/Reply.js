@@ -7,7 +7,7 @@ import { formatDistanceToNow } from 'date-fns';
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 
-const Reply = ({ commentId, onCommentsUpdate}) => {
+const Reply = ({ commentId, onCommentsUpdate }) => {
     const { auth } = useContext(AuthContext);
     const [replies, setReplies] = useState([]);
     const [newReply, setNewReply] = useState('');
@@ -101,7 +101,7 @@ const Reply = ({ commentId, onCommentsUpdate}) => {
             console.error('Error liking the reply:', err);
         }
     };
-    
+
     const handleUnlikeReply = async (replyId) => {
         try {
             const response = await api.put(`/replies/${replyId}/unlike`, {}, {
@@ -118,7 +118,7 @@ const Reply = ({ commentId, onCommentsUpdate}) => {
             console.error('Error unliking the reply:', err);
         }
     };
-    
+
     return (
         <div className="reply-section bg-white p-4 shadow-md rounded-lg">
             <h4 className="text-md font-semibold mb-4">Replies</h4>
@@ -133,7 +133,11 @@ const Reply = ({ commentId, onCommentsUpdate}) => {
                     replies.map((reply) => (
                         <div key={reply._id} className="reply-item p-2 bg-[transparent] rounded-md">
                             <div className='flex mt-0'>
-                                <div className="ml-3 bg-[#9500F0] text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]"></div>
+                                <div className="ml-3 bg-[#9500F0] text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]">
+                                    <span className='font-sans font-bold'>
+                                        {reply.userId.username.charAt(0).toUpperCase()}
+                                    </span>
+                                </div>
                                 <div className='flex flex-col items-baseline'>
                                     <p className="font-semibold">{reply.userId?.username}</p>
                                     <p className="text-xs text-gray-500"> • {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}</p>

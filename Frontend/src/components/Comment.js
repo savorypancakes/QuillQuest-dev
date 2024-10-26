@@ -194,7 +194,12 @@ const Comment = ({ postId, onCommentsUpdate }) => {
           comments.map((comment) => (
             <div key={comment._id} className="flex flex-col p-2 bg-[transparent] rounded-md">
               <div className='flex mt-3'>
-                <div className="ml-3 bg-[#9500F0] text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]"></div>
+                <div className="ml-3 bg-[#9500F0] text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]">
+                  <span className='font-sans font-bold'>
+                    {comment.userId.username.charAt(0).toUpperCase()}
+                  </span>
+                  
+                </div>
                 <div className='flex flex-col items-baseline'>
                   <p className="font-semibold">{comment.userId?.username}</p>
                   <p className="text-xs text-gray-500"> • {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}</p>
