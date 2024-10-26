@@ -12,9 +12,27 @@ const Profile = () => {
   const [error, setError] = useState(''); // State to hold any error message
   const [avatarColor, setAvatarColor] = useState('bg-purple-600');
 
-  const handleSave = () => {
-    setIsEditing(false);
-    // Here you would typically save the changes to a backend
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await api.put(
+        '/users/profile',
+        {
+          username: username || profileData.username,
+          email: email || profileData.email,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Pass token in Authorization header
+          },
+        }
+      );
+      setProfileData(response.data); // Update profile data with the saved changes
+      setIsEditing(false);
+    } catch (err) {
+      console.error('Error saving profile:', err);
+      setError('Failed to save profile');
+    }
   };
 
   const handleCustomize = () => {
@@ -35,6 +53,8 @@ const Profile = () => {
         },
       });
       setProfileData(response.data); // Set the profile data in state
+      setUsername(response.data.username);
+      setEmail(response.data.email);
     } catch (err) {
       console.error('Error fetching profile:', err);
       setError('Failed to load profile');
@@ -94,12 +114,10 @@ const Profile = () => {
                     <div className='flex-col mt-10 ml-10'>
                       <div className='flex'>
                         <p className="text-2xl font-semibold mb-4">{profileData.username}</p>
-                        
                       </div>
                       <div className='flex'>
                         <p className="text-2xl font-semibold">{profileData.email}</p>
                       </div>
-                      
                     </div>
                   )}
                 </div>
