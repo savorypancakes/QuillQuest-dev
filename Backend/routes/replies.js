@@ -7,6 +7,8 @@ const {
   createReply,
   getRepliesByComment,
   deleteReply,
+  likeReply,
+  unlikeReply,
 } = require('../controllers/replyController');
 const {
   likeComment,
@@ -37,5 +39,8 @@ router.put('/comments/:id/like', protect, likeComment);
 // @desc    Unlike a comment
 // @access  Private
 router.put('/comments/:id/unlike', protect, unlikeComment);
+
+router.put('/replies/:replyId/like', protect, likeReply);
+router.put('/replies/:replyId/unlike', protect, unlikeReply);
 
 module.exports = router;

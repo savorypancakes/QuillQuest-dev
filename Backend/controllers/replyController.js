@@ -92,3 +92,50 @@ exports.deleteReply = async (req, res, next) => {
     next(error);
   }
 };
+// @desc    Like a reply
+// @route   PUT /api/replies/:replyId/like
+// @access  Private
+exports.likeReply = async (req, res, next) => {
+  try {
+    const { replyId } = req.params;
+    const userId = req.user._id;
+
+    const reply = await Reply.findById(replyId);
+    if (!reply) {
+      return res.status(404).json({ message: 'Reply not found' });
+    }
+
+    if (!reply.likes.includes(userId)) {
+      reply.likes.push(userId);
+      await reply.save();
+    }
+
+    res.status(200).json({ likes: reply.likes });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Unlike a reply
+// @route   PUT /api/replies/:replyId/unlike
+// @access  Private
+exports.unlikeReply = async (req, res, next) => {
+  try {
+    const { replyId } = req.params;
+    const userId = req.user._id;
+
+    const reply = await Reply.findById(replyId);
+    if (!reply) {
+      return res.status(404).json({ message: 'Reply not found' });
+    }
+
+    if (reply.likes.includes(userId)) {
+      reply.likes = reply.likes.filter((like) => like.toString() !== userId.toString());
+      await reply.save();
+    }
+
+    res.status(200).json({ likes: reply.likes });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -237,7 +237,7 @@ const Comment = ({ postId, onCommentsUpdate }) => {
 
               {showReplies[comment._id] && (
                 <div className="flex flex-col">
-                  <Reply commentId={comment._id} onCommentsUpdate={onCommentsUpdate}/>
+                  <Reply commentId={comment._id} onCommentsUpdate={setComments}/>
                 </div>
               )}
             </div>

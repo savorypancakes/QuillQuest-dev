@@ -4,8 +4,10 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import { formatDistanceToNow } from 'date-fns';
+import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
+import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 
-const Reply = ({ commentId }) => {
+const Reply = ({ commentId, onCommentsUpdate}) => {
     const { auth } = useContext(AuthContext);
     const [replies, setReplies] = useState([]);
     const [newReply, setNewReply] = useState('');
@@ -62,8 +64,19 @@ const Reply = ({ commentId }) => {
                     username: auth.user.username,
                 },
             };
+            const updatedReplies = [...replies, newReplyData];
+            setReplies(updatedReplies); // Append the new reply to the list
 
-            setReplies([...replies, newReplyData]); // Append the new reply to the list
+            // Update the total comments and replies count in the parent component
+            if (onCommentsUpdate) {
+                onCommentsUpdate((prevComments) =>
+                    prevComments.map((comment) =>
+                        comment._id === commentId
+                            ? { ...comment, replies: updatedReplies }
+                            : comment
+                    )
+                );
+            }
             setNewReply(''); // Clear the input
             setLoading(false);
         } catch (err) {
@@ -72,6 +85,40 @@ const Reply = ({ commentId }) => {
         }
     };
 
+    const handleLikeReply = async (replyId) => {
+        try {
+            const response = await api.put(`/replies/${replyId}/like`, {}, {
+                headers: {
+                    Authorization: `Bearer ${auth.token}`,
+                },
+            });
+            setReplies((prevReplies) =>
+                prevReplies.map((reply) =>
+                    reply._id === replyId ? { ...reply, likes: response.data.likes } : reply
+                )
+            );
+        } catch (err) {
+            console.error('Error liking the reply:', err);
+        }
+    };
+    
+    const handleUnlikeReply = async (replyId) => {
+        try {
+            const response = await api.put(`/replies/${replyId}/unlike`, {}, {
+                headers: {
+                    Authorization: `Bearer ${auth.token}`,
+                },
+            });
+            setReplies((prevReplies) =>
+                prevReplies.map((reply) =>
+                    reply._id === replyId ? { ...reply, likes: response.data.likes } : reply
+                )
+            );
+        } catch (err) {
+            console.error('Error unliking the reply:', err);
+        }
+    };
+    
     return (
         <div className="reply-section bg-white p-4 shadow-md rounded-lg">
             <h4 className="text-md font-semibold mb-4">Replies</h4>
@@ -92,15 +139,28 @@ const Reply = ({ commentId }) => {
                                     <p className="text-xs text-gray-500"> • {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}</p>
                                     <p>{reply.content}</p>
                                 </div>
-
                             </div>
-
+                            <div className="flex items-center mt-2 ml-14">
+                                {reply.likes && reply.likes.includes(auth.user.id) ? (
+                                    <ThumbUpAltIcon
+                                        onClick={() => handleUnlikeReply(reply._id)}
+                                        className="cursor-pointer text-[#9500F0] mr-2"
+                                    />
+                                ) : (
+                                    <ThumbUpOffAltIcon
+                                        onClick={() => handleLikeReply(reply._id)}
+                                        className="cursor-pointer text-[#9500F0] mr-2"
+                                    />
+                                )}
+                                <span>{reply.likes ? reply.likes.length : 0}</span>
+                            </div>
                         </div>
                     ))
                 ) : (
-                    <p></p>
+                    <p>No replies yet. Be the first to reply!</p>
                 )}
             </div>
+
             {/* New Reply Form */}
             <form onSubmit={handleReplySubmit} className="mb-4 mt-4">
                 <textarea
@@ -119,10 +179,7 @@ const Reply = ({ commentId }) => {
                         {loading ? 'Posting...' : 'Post Reply'}
                     </button>
                 </div>
-
             </form>
-
-
         </div>
     );
 };
