@@ -227,9 +227,10 @@ const PostDetail = () => {
               <ChatBubbleOutlineIcon className="text-[#9500F0] cursor-pointer mr-3" />
               <span className='mr-5'>{comments}</span>
             </div>
-            {!isEditing && (
+            {!isEditing && auth.user.id === post.userId._id && (
               <button onClick={handleEdit} className='text-md w-auto mt-0 px-2 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700'>
-                Edit</button>
+                Edit
+              </button>
             )}
           </div>
           <hr className="my-5" />
