@@ -131,13 +131,17 @@ exports.deletePost = async (req, res, next) => {
     }
 
     // Check if the user is the author
-    if (post.author.toString() !== req.user._id.toString()) {
+    if (post.userId.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: 'Not authorized to delete this post' });
     }
 
-    await post.remove();
+    await post.deleteOne(); // Use deleteOne instead of remove
 
-    res.json({ message: 'Post removed' });
+    // Emit a socket event to notify other users about the post deletion
+    const io = req.app.get('io');
+    io.emit('postDeleted', { postId: req.params.id });
+
+    res.json({ message: 'Post successfully deleted', postId: req.params.id });
   } catch (error) {
     next(error);
   }

@@ -222,7 +222,7 @@ const Comment = ({ postId, onCommentsUpdate, onReplyUpdate }) => {
         {loading && <p>Loading comments...</p>}
         {comments.length > 0 ? (
           comments.map((comment) => (
-            <div key={comment._id} className="flex flex-col p-2 bg-[transparent] rounded-md">
+            <div key={comment._id} className="flex flex-col p-2 bg-[transparent] rounded-md hover:bg-gray-50">
               <div className='flex mt-3'>
                 <div className={`${avatarColors[comment.userId._id] || 'bg-purple-600'} text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]`}>
                   <span className='font-sans font-bold'>

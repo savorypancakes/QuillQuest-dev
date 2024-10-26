@@ -12,6 +12,8 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import '../assets/css/index.css';
 import Navbar from '../components/Navbar';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import DeleteModal from '../components/DeleteModal';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 
 const PostDetail = () => {
   const { id } = useParams(); // Get the post ID from the URL parameter
@@ -28,6 +30,7 @@ const PostDetail = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
   const [editedContent, setEditedContent] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false); // Modal visibility state
 
   // Function to like a post
   const handleLike = async () => {
@@ -143,6 +146,32 @@ const PostDetail = () => {
     setEditedContent(post.content);
   };
 
+ // Function to handle post deletion
+ const handleDelete = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    await api.delete(`/posts/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    navigate('/home'); // Redirect to home after successful deletion
+  } catch (err) {
+    console.error('Error deleting post:', err);
+    setError('Failed to delete the post');
+  }
+};
+
+// Function to open delete modal
+const handleOpenDeleteModal = () => {
+  setShowDeleteModal(true);
+};
+
+// Function to close delete modal
+const handleCloseDeleteModal = () => {
+  setShowDeleteModal(false);
+};
+
   // Loading state
   if (loading) {
     return <p>Loading post...</p>;
@@ -228,15 +257,31 @@ const PostDetail = () => {
               <span className='mr-5'>{comments}</span>
             </div>
             {!isEditing && auth.user.id === post.userId._id && (
-              <button onClick={handleEdit} className='text-md w-auto mt-0 px-2 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700'>
+              <div className='flex items-center'>
+                <button onClick={handleEdit} 
+                className='mr-5 h-[50px] text-md w-auto mt-0 px-2 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700'>
                 Edit
               </button>
+              <button 
+              onClick={handleOpenDeleteModal}
+              className='h-[50px] text-md w-auto mt-0 px-2 py-2 bg-red-400 text-white rounded-md hover:bg-black'>
+                <DeleteOutlineIcon/>
+              </button>
+              </div>
+              
             )}
           </div>
           <hr className="my-5" />
           {/* Comments Section */}
           <Comment postId={post._id} onCommentsUpdate={updateCommentsCount} onReplyUpdate={handleReplyUpdate} />
         </div>
+        {/* Show Delete Modal if needed */}
+      {showDeleteModal && (
+        <DeleteModal
+          onConfirm={handleDelete}
+          onCancel={handleCloseDeleteModal}
+        />
+      )}
       </div>
     </div>
   );
