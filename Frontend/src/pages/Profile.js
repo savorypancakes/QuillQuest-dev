@@ -11,6 +11,9 @@ const Profile = () => {
   const [profileData, setProfileData] = useState(null); // State to hold the user's profile data
   const [error, setError] = useState(''); // State to hold any error message
   const [avatarColor, setAvatarColor] = useState('bg-purple-600');
+  const [postsCount, setPostsCount] = useState(0); // State to hold the count of user's posts
+  const [totalLikes, setTotalLikes] = useState(0); // State to hold the total likes of user's posts
+  const [avgWordCount, setAvgWordCount] = useState(0); // State to hold the average word count per post
 
   const handleSave = async () => {
     try {
@@ -61,8 +64,35 @@ const Profile = () => {
     }
   };
 
+  // Fetch user's posts count, total likes, and average word count
+  const fetchPostsData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await api.get('/posts/user', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const userPosts = response.data;
+      setPostsCount(userPosts.length); // Set the posts count in state
+
+      // Calculate total likes from all posts
+      const totalLikesCount = userPosts.reduce((acc, post) => acc + (post.likes ? post.likes.length : 0), 0);
+      setTotalLikes(totalLikesCount);
+
+      // Calculate average word count per post
+      const totalWords = userPosts.reduce((acc, post) => acc + (post.content ? post.content.split(' ').length : 0), 0);
+      const averageWordCount = userPosts.length > 0 ? Math.round(totalWords / userPosts.length) : 0;
+      setAvgWordCount(averageWordCount);
+    } catch (err) {
+      console.error('Error fetching posts data:', err);
+      setError('Failed to load posts data');
+    }
+  };
+
   useEffect(() => {
     fetchProfile();
+    fetchPostsData();
   }, []);
 
   // Display loading or error messages
@@ -143,12 +173,18 @@ const Profile = () => {
           </div>
         </div>
         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-          {['Essay Shared', 'Total Likes', 'AVG. Word Count/Essay'].map((label, index) => (
-            <div key={index} className="bg-white p-4 rounded-lg shadow text-center">
-              <div className="text-4xl font-bold text-purple-600">0</div>
-              <div className="text-sm text-gray-600">{label}</div>
-            </div>
-          ))}
+          <div className="bg-white p-4 rounded-lg shadow text-center">
+            <div className="text-4xl font-bold text-purple-600">{postsCount}</div>
+            <div className="text-sm text-gray-600">Essay Shared</div>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow text-center">
+            <div className="text-4xl font-bold text-purple-600">{totalLikes}</div>
+            <div className="text-sm text-gray-600">Total Likes</div>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow text-center">
+            <div className="text-4xl font-bold text-purple-600">{avgWordCount}</div>
+            <div className="text-sm text-gray-600">AVG. Word Count/Essay</div>
+          </div>
         </div>
       </div>
     </div>

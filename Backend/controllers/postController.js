@@ -5,6 +5,19 @@ const Tag = require('../models/Tag'); // If using a separate Tag model
 const User = require('../models/User');
 const { io } = require('../server'); // To emit events
 
+// @desc    Get all posts by a specific user
+// @route   GET /api/posts/user
+// @access  Private
+exports.getUserPosts = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const posts = await Post.find({ userId });
+    res.json(posts);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to get user posts' });
+  }
+};
+
 // @desc    Create a new post
 // @route   POST /api/posts
 // @access  Private
