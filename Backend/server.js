@@ -7,6 +7,7 @@ const Prompt = require('./models/Prompt');
 const cron = require('node-cron');
 const fs = require('fs');
 const path = require('path');
+const { generatePrompt } = require('./promptGenerator');
 
 // Enhanced logging function
 const logWithTimestamp = (message) => {
@@ -37,43 +38,6 @@ io.on('connection', (socket) => {
 
 app.set('io', io);
 
-// Function to generate a prompt using GROQ
-const generatePrompt = async () => {
-  const GROQ_API_KEY = process.env.REACT_APP_GROQ_API_KEY;
-  const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-
-  try {
-    logWithTimestamp('Sending request to GROQ API...');
-    const response = await axios.post(GROQ_API_URL, {
-      model: "llama3-8b-8192",
-      messages: [
-        { role: "system", content: "You are a helpful assistant that generates essay topic prompts." },
-        { role: "user", content: "Generate a thought-provoking essay topic prompt suitable for high school or college students. The topic should be specific, engaging, and encourage critical thinking." }
-      ],
-      max_tokens: 100
-    }, {
-      headers: {
-        "Authorization": `Bearer ${GROQ_API_KEY}`,
-        "Content-Type": "application/json"
-      }
-    });
-    
-    const promptTopic = response.data.choices[0].message.content.trim();
-    
-    const newPrompt = new Prompt({ 
-      topic: promptTopic,
-      expiresAt: new Date(+new Date() + 7*24*60*60*1000)
-    });
-    await newPrompt.save();
-    
-    logWithTimestamp(`New prompt generated and saved: ${promptTopic}`);
-    return promptTopic;
-  } catch (error) {
-    logWithTimestamp(`Error generating prompt with GROQ: ${error.response ? JSON.stringify(error.response.data) : error.message}`);
-    throw error;
-  }
-};
-
 // Schedule prompt generation to run daily at midnight
 cron.schedule('0 0 * * *', async () => {
   try {
@@ -84,8 +48,15 @@ cron.schedule('0 0 * * *', async () => {
 
     if (!existingPrompt) {
       logWithTimestamp('No prompt generated today. Generating new prompt...');
-      const newPromptTopic = await generatePrompt();
-      io.emit('newPrompt', { topic: newPromptTopic });
+      const promptTopic = await generatePrompt();
+      
+      const newPrompt = new Prompt({ 
+        topic: promptTopic,
+        expiresAt: new Date(+new Date() + 7*24*60*60*1000)
+      });
+      await newPrompt.save();
+      
+      io.emit('newPrompt', { topic: promptTopic });
       logWithTimestamp('New prompt emitted to clients');
     } else {
       logWithTimestamp('A prompt has already been generated today.');

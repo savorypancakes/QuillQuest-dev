@@ -36,32 +36,80 @@ export const parseThesisPoints = async (thesisContent) => {
 
   const systemMessage = {
     role: 'system',
-    content: `Analyze the thesis statement and extract the main points that need to be addressed in body paragraphs. Return ONLY a JSON object with this structure:
+    content: `You are a JSON-only response analyzer. Analyze the thesis statement and extract main points for body paragraphs.
+
+IMPORTANT: Return ONLY a valid JSON object with NO additional text, following this EXACT structure:
+{
+  "mainPoints": [
     {
-      "mainPoints": [
-        {
-          "point": "string - the main point",
-          "keywords": ["relevant keywords"],
-          "suggestedEvidence": ["potential evidence types or examples to include"]
-        }
-      ]
-    }`
+      "point": "string",
+      "keywords": ["keyword1", "keyword2"],
+      "suggestedEvidence": ["evidence1", "evidence2"]
+    }
+  ]
+}
+
+Rules:
+1. The response must be ONLY the JSON object
+2. All property names must be in double quotes
+3. All string values must be in double quotes
+4. Arrays can be empty but must be present
+5. NO comments or extra text allowed`
   };
 
-  const response = await llm.invoke([
-    systemMessage,
-    { role: 'user', content: `Extract main points from this thesis: "${thesisContent}"` }
-  ]);
-
   try {
-    const parsedResponse = JSON.parse(response.content);
-    if (!parsedResponse.mainPoints || !Array.isArray(parsedResponse.mainPoints)) {
-      throw new Error('Invalid thesis points structure');
+    const response = await llm.invoke([
+      systemMessage,
+      { role: 'user', content: `Extract main points from this thesis: "${thesisContent}"` }
+    ]);
+
+    // Try to extract JSON if there's any extra text
+    let jsonStr = response.content;
+    if (jsonStr.includes('{')) {
+      jsonStr = jsonStr.substring(jsonStr.indexOf('{'), jsonStr.lastIndexOf('}') + 1);
     }
-    return parsedResponse;
+
+    try {
+      const parsedResponse = JSON.parse(jsonStr);
+      
+      // Validate the response structure
+      if (!parsedResponse.mainPoints || !Array.isArray(parsedResponse.mainPoints)) {
+        throw new Error('Invalid response structure');
+      }
+
+      // Ensure each point has the required fields
+      parsedResponse.mainPoints = parsedResponse.mainPoints.map((point, index) => ({
+        point: point.point || `Main Point ${index + 1}`,
+        keywords: Array.isArray(point.keywords) ? point.keywords : [],
+        suggestedEvidence: Array.isArray(point.suggestedEvidence) ? point.suggestedEvidence : []
+      }));
+
+      return parsedResponse;
+    } catch (parseError) {
+      console.error('Failed to parse response:', jsonStr);
+      // Return a default structure
+      return {
+        mainPoints: [
+          {
+            point: "Main Argument",
+            keywords: [],
+            suggestedEvidence: []
+          }
+        ]
+      };
+    }
   } catch (error) {
     console.error('Error parsing thesis points:', error);
-    throw new Error('Failed to parse thesis points');
+    // Return a default structure instead of throwing
+    return {
+      mainPoints: [
+        {
+          point: "Main Argument",
+          keywords: [],
+          suggestedEvidence: []
+        }
+      ]
+    };
   }
 };
 
@@ -104,96 +152,101 @@ export const checkSectionCompleteness = async (content, sectionType, previousCon
 
   const systemMessage = {
     role: 'system',
-    content: `You are a JSON-only response analyzer for essays. Your task is to evaluate the given ${sectionType} section and return a strict JSON object.
+    content: `You are a JSON-only response analyzer. Evaluate the given ${sectionType} section against specific criteria.
 
-IMPORTANT: DO NOT include any explanatory text. Return ONLY a valid JSON object matching this structure:
+IMPORTANT: Return ONLY a valid JSON object with NO additional text, following this EXACT structure:
 {
   "isComplete": false,
   "completionStatus": {
-    "met": [],
-    "missing": []
+    "met": ["criteria met 1", "criteria met 2"],
+    "missing": ["missing criteria 1", "missing criteria 2"]
   },
-  "feedbackItems": [],
-  "suggestedImprovements": []
+  "feedbackItems": ["feedback 1", "feedback 2"],
+  "suggestedImprovements": ["improvement 1", "improvement 2"]
 }
 
 Evaluate against these criteria:
 ${criteria}
 
 Rules:
-1. isComplete must be true ONLY if ALL criteria are met
-2. met array should contain criteria that were successfully fulfilled
-3. missing array should contain criteria that need improvement
-4. feedbackItems should contain specific issues found
-5. suggestedImprovements should contain actionable suggestions`
-  };
-
-  const userMessage = {
-    role: 'user',
-    content: `${content}`
+1. The response must be ONLY the JSON object
+2. All property names must be in double quotes
+3. All string values must be in double quotes
+4. Arrays can be empty but must be present
+5. NO comments or extra text allowed`
   };
 
   try {
-    const response = await llm.invoke([systemMessage, userMessage]);
-    
+    const response = await llm.invoke([
+      systemMessage,
+      {
+        role: 'user',
+        content: previousContent 
+          ? `Previous section: "${previousContent}"\nCurrent section: "${content}"`
+          : `Analyze this content: "${content}"`
+      }
+    ]);
+
     // Try to extract JSON if there's any extra text
     let jsonStr = response.content;
     if (jsonStr.includes('{')) {
       jsonStr = jsonStr.substring(jsonStr.indexOf('{'), jsonStr.lastIndexOf('}') + 1);
     }
 
-    let parsedResponse;
     try {
-      parsedResponse = JSON.parse(jsonStr);
+      const parsedResponse = JSON.parse(jsonStr);
+
+      // Validate and normalize the response
+      const normalizedResponse = {
+        isComplete: false,
+        completionStatus: {
+          met: Array.isArray(parsedResponse?.completionStatus?.met) 
+            ? parsedResponse.completionStatus.met 
+            : [],
+          missing: Array.isArray(parsedResponse?.completionStatus?.missing) 
+            ? parsedResponse.completionStatus.missing 
+            : ['Requirements need to be reviewed']
+        },
+        feedbackItems: Array.isArray(parsedResponse?.feedbackItems) 
+          ? parsedResponse.feedbackItems 
+          : [],
+        suggestedImprovements: Array.isArray(parsedResponse?.suggestedImprovements) 
+          ? parsedResponse.suggestedImprovements 
+          : []
+      };
+
+      // Determine completion status
+      normalizedResponse.isComplete = 
+        Array.isArray(normalizedResponse.completionStatus.missing) && 
+        normalizedResponse.completionStatus.missing.length === 0;
+
+      return normalizedResponse;
+
     } catch (parseError) {
       console.error('Failed to parse response:', jsonStr);
-      // Return a default response structure
+      // Return a structured response for analysis failure
       return {
         isComplete: false,
         completionStatus: {
           met: [],
-          missing: ['Failed to analyze section - please try again']
+          missing: ['Please review the section requirements']
         },
-        feedbackItems: ['Analysis failed - please revise and try again'],
-        suggestedImprovements: ['Please try submitting again']
+        feedbackItems: ['Analysis could not be completed'],
+        suggestedImprovements: ['Please try analyzing the section again']
       };
     }
 
-    // Validate and normalize the response
-    const normalizedResponse = {
-      isComplete: false,
-      completionStatus: {
-        met: Array.isArray(parsedResponse?.completionStatus?.met) 
-          ? parsedResponse.completionStatus.met 
-          : [],
-        missing: Array.isArray(parsedResponse?.completionStatus?.missing) 
-          ? parsedResponse.completionStatus.missing 
-          : ['Requirements need to be checked again']
-      },
-      feedbackItems: Array.isArray(parsedResponse?.feedbackItems) 
-        ? parsedResponse.feedbackItems 
-        : [],
-      suggestedImprovements: Array.isArray(parsedResponse?.suggestedImprovements) 
-        ? parsedResponse.suggestedImprovements 
-        : []
-    };
-
-    // Force isComplete to false if there are missing criteria
-    normalizedResponse.isComplete = normalizedResponse.completionStatus.missing.length === 0;
-
-    return normalizedResponse;
-
   } catch (error) {
     console.error('Error during section analysis:', error);
-    // Return a graceful fallback response instead of throwing
+    // Return a fallback response
     return {
       isComplete: false,
       completionStatus: {
         met: [],
-        missing: ['Analysis failed - please try again']
+        missing: ['Section analysis failed']
       },
       feedbackItems: ['Unable to complete analysis'],
-      suggestedImprovements: ['Please revise and try submitting again']
+      suggestedImprovements: ['Please try again']
     };
   }
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusIcon, XIcon } from '@heroicons/react/solid';
+import { PlusIcon, XIcon, DocumentTextIcon } from '@heroicons/react/solid';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const ProgressCircle = ({ percentage }) => (
@@ -29,7 +29,7 @@ const EssaySection = ({ title, percentage, isLast, onClick, onDelete, showDelete
     <div className="flex items-center mb-4">
       <button
         onClick={onClick}
-        className="flex-grow flex items-center justify-between bg-purple-600 text-white rounded-full py-2 px-4 z-10 relative hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
+        className="flex-grow flex items-center justify-between bg-purple-600 text-white rounded-full py-2 px-4 z-10 relative hover:bg-purple-700 transition-colors"
       >
         <span>{title}</span>
         <ProgressCircle percentage={percentage} />
@@ -37,7 +37,7 @@ const EssaySection = ({ title, percentage, isLast, onClick, onDelete, showDelete
       {showDelete && (
         <button
           onClick={onDelete}
-          className="ml-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
+          className="ml-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600"
           aria-label="Delete paragraph"
         >
           <XIcon className="h-5 w-5" />
@@ -55,10 +55,18 @@ export default function EssayBuilder() {
   const location = useLocation();
 
   const [sections, setSections] = useState(() => {
+    // First check if we have sections from location state (coming from EssayBlock)
+    if (location.state?.allSections) {
+      return location.state.allSections;
+    }
+    
+    // Then check localStorage
     const savedSections = localStorage.getItem('essaySections');
     if (savedSections) {
       return JSON.parse(savedSections);
     }
+  
+    // Finally use default if nothing exists
     return [
       { id: 'intro', title: 'Introduction', percentage: 0 },
       { id: 'conclusion', title: 'Conclusion', percentage: 0 },
@@ -82,20 +90,46 @@ export default function EssayBuilder() {
   }, [essayInfo]);
 
   useEffect(() => {
-    if (location.state?.updatedSections) {
-      setSections(location.state.updatedSections);
+    // Check if there's location state with sections
+    if (location.state?.allSections) {
+      setSections(location.state.allSections);
     }
+    
     if (location.state?.essayInfo) {
       setEssayInfo(location.state.essayInfo);
     }
-    window.history.replaceState({}, document.title);
+    
+    // Clear location state after using it
+    if (location.state) {
+      window.history.replaceState({}, document.title);
+    }
   }, [location.state]);
+
+  useEffect(() => {
+    if (sections.length > 0) {
+      localStorage.setItem('essaySections', JSON.stringify(sections));
+      
+      // Update each section's content and requirements
+      sections.forEach(section => {
+        const sectionContent = localStorage.getItem(`essayContent_${section.id}`);
+        if (sectionContent) {
+          localStorage.setItem(`essayContent_${section.id}`, sectionContent);
+        }
+        
+        const requirements = localStorage.getItem(`sectionRequirements_${section.id}`);
+        if (requirements) {
+          localStorage.setItem(`sectionRequirements_${section.id}`, requirements);
+        }
+      });
+    }
+  }, [sections]);
 
   const addSection = () => {
     const newSection = { 
       id: `body-${Date.now()}`, 
       title: `Body Paragraph ${sections.length - 1}`, 
-      percentage: 0 
+      percentage: 0,
+      type: 'body'  // Add type to match EssayBlock structure
     };
     setSections([...sections.slice(0, -1), newSection, sections[sections.length - 1]]);
   };
@@ -115,6 +149,16 @@ export default function EssayBuilder() {
       } 
     });
   };
+  
+  const handleNextClick = () => {
+    navigate('/essayreview', {
+      state: {
+        allSections: sections,
+        essayInfo
+      }
+    });
+  };
+  
 
   const handleCancel = () => {
     // Reset all progress
@@ -207,7 +251,9 @@ export default function EssayBuilder() {
           >
             Cancel
           </button>
-          <button className="bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50">
+          <button 
+            onClick={handleNextClick}
+            className="bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50">
             Next
           </button>
         </div>

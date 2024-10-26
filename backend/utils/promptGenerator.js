@@ -2,12 +2,12 @@ const { ChatGroq } = require("@langchain/groq");
 
 exports.generatePrompt = async () => {
   try {
-    if (!process.env.GROQ_API_KEY) {
-      throw new Error('GROQ_API_KEY is not configured');
+    if (!process.env.REACT_APP_GROQ_API_KEY) {
+      throw new Error('REACT_APP_GROQ_API_KEY is not configured');
     }
 
     const llm = new ChatGroq({
-      apiKey: process.env.GROQ_API_KEY,
+      apiKey: process.env.REACT_APP_GROQ_API_KEY,
       model: "llama3-70b-8192",
       temperature: 0.7,
       maxTokens: 100,
