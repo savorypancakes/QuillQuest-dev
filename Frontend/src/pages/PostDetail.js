@@ -57,7 +57,6 @@ const PostDetail = () => {
   const fetchPost = async () => {
     try {
       const response = await api.get(`/posts/${id}`); // Fetch post by ID
-      console.log('Post data:', response.data); // Log the response data
       setPost(response.data); // Store the post data in state
       setLikes(response.data.likes.length); // Set initial number of likes
       setHasLiked(response.data.likes.includes(auth.user.id)); // Check if the current user has liked the post
@@ -104,44 +103,44 @@ const PostDetail = () => {
 
   // Display the post details
   return (
-    <div className="flex flex-col bg-[transparent] mx-[20%] pt-20 pb-5 px-5">
+    <div className="bg-[white] min-h-screen pt-20 pb-5 px-5">
       <Navbar />
-      <Link to="/home" className="back-link">← Back to Home</Link>
-      <div className='flex'>
-        <div className="bg-[#9500F0] text-white font-bold w-10 h-10 flex items-center justify-center overflow-hidden text-xl rounded-full mr-5"></div>
-        <div className="flex flex-col items-baseline">
-          <span className='font-semibold text-black'> {post.userId?.username || 'Unknown'}</span>
-          <span className='text-[gray] text-[0.85rem]'>Posted on: {new Date(post.createdAt).toLocaleString()}</span>
+      <div className="w-full max-w-5xl mx-auto mt-5">
+        <Link to="/home" className="block text-purple-600 mb-5">← Back to Home</Link>
+        <div className="bg-white p-5 rounded-lg">
+          <div className='flex items-center mb-5'>
+            <div className="bg-[#9500F0] text-white font-bold w-10 h-10 flex items-center justify-center overflow-hidden text-xl rounded-full mr-5"></div>
+            <div className="flex flex-col">
+              <div className='flex'>
+                <span className='font-semibold text-black'>{post.userId?.username || 'Unknown'}</span>
+              </div>
+              
+              <span className='text-gray-500 text-sm'>Posted on: {new Date(post.createdAt).toLocaleString()}</span>
+            </div>
+          </div>
+          <div className='flex'>
+            <h2 className="text-black font-bold text-2xl mb-4">{post.title}</h2>
+          </div>
+          
+          <div className="flex mb-4">
+            {post.postType && <div className="bg-[#9500F0] text-white text-sm inline-block px-4 py-1 rounded-full">{post.postType}</div>}
+          </div>
+          <div className="mb-5" dangerouslySetInnerHTML={{ __html: post.content }} />
+          <div className="flex items-center mb-5">
+            {hasLiked ? (
+              <ThumbUpAltIcon onClick={handleUnlike} className="text-[#9500F0] cursor-pointer mr-3" />
+            ) : (
+              <ThumbUpOffAltIcon onClick={handleLike} className="text-[#9500F0] cursor-pointer mr-3" />
+            )}
+            <span className="mr-5">{likes}</span>
+            <ChatBubbleOutlineIcon className="text-[#9500F0] cursor-pointer mr-3" />
+            <span>{comments}</span>
+          </div>
+          <hr className="my-5" />
+          {/* Comments Section */}
+          <Comment postId={post._id} onCommentsUpdate={updateCommentsCount}/>
         </div>
       </div>
-
-
-      <h2 className="text-black font-bold text-2xl text-left mt-5 mb-[15px] mx-0">{post.title}</h2>
-      <div className="flex mb-2.5">
-          {post.postType && <div className="bg-[#9500F0] text-white text-[0.9rem] inline-block px-4 py-1 rounded-[1rem]">{post.postType}</div>}
-      </div>
-      <div className="pb-5">
-        <div dangerouslySetInnerHTML={{ __html: post.content }} />
-      </div>
-
-
-      <div className="flex justify-between">
-        <span>
-          {hasLiked ? (
-            <ThumbUpAltIcon onClick={handleUnlike} className="bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline" />
-          ) : (
-            <ThumbUpOffAltIcon onClick={handleLike} className="bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline" />
-          )}
-          {likes}
-          <ChatBubbleOutlineIcon className="bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline" />
-          {comments}
-        </span>
-      </div>
-      <hr />
-      {/* Comments Section */}
-      <Comment postId={post._id} onCommentsUpdate={updateCommentsCount}/>
-
-
     </div>
   );
 };

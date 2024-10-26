@@ -110,12 +110,19 @@ const Navbar = () => {
     <nav className="flex justify-between items-center bg-[white] shadow-[0_2px_5px_rgba(0,0,0,0.1)] fixed top-[-5px] z-[1000] px-5 py-[5px] rounded-[25px] inset-x-0">
       <div className="flex items-center">
         <Link to="/home"><img src={logo} alt="Logo" className="h-[50px] mr-2.5" /></Link>
-        <div className="text-2xl text-[#9500F0] font-['Mclaren']">Quillquest</div>
+        <div className="text-2xl text-[#9500F0] font-['Mclaren'] hidden sm:block">Quillquest</div>
       </div>
 
-      <div className="flex items-center justify-end w-1/5">
-        <Link to="/home" className='bg-[#D9D9D9] pl-3 pr-2 py-2 hover:bg-[#333] hover:text-[white] rounded-l-xl'> Home <HomeIcon /></Link>
-        <Link to="/createpost" className='bg-[#D9D9D9] pl-2 pr-3 py-2 hover:bg-[#333] hover:text-[white] rounded-r-xl'> Create  <EditIcon /></Link>
+      <div className="flex items-center justify-end w-auto space-x-2">
+        <button className="lg:hidden bg-[#D9D9D9] mt-0 text-black px-3 py-2 rounded-md hover:text-white hover:bg-[black]" onClick={toggleDropdown}>
+          <Link to="/createpost" className=''> Create  <EditIcon /></Link>
+        </button>
+
+        <div className="hidden lg:flex items-center ">
+          <Link to="/home" className='bg-[#D9D9D9] pl-3 pr-2 py-2 hover:bg-[#333] hover:text-[white] rounded-l-xl'> Home <HomeIcon /></Link>
+          <Link to="/createpost" className='bg-[#D9D9D9] pl-2 pr-3 py-2 hover:bg-[#333] hover:text-[white] rounded-r-xl'> Create  <EditIcon /></Link>
+        </div>
+
         <div ref={notificationRef} className="relative">
           <button
             className="bg-transparent text-black cursor-pointer flex items-center justify-center h-10 w-10 m-2 p-0 border-[none]"
@@ -146,7 +153,7 @@ const Navbar = () => {
                           className="color-[black] w-auto h-auto bg-transparent hover:bg-[red] ml-2"
                           onClick={() => deleteNotification(notification._id)}
                         >
-                          <CloseIcon fontSize='15'/>
+                          <CloseIcon fontSize='15' />
                         </button>
                       </div>
                     </div>

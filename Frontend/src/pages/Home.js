@@ -44,11 +44,12 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="bg-[#f8f8f8] min-h-[1024px] pt-20 pb-5 px-5 flex flex-col min-h-screen">
+    <div className="bg-[#f8f8f8] min-h-screen pt-20 pb-5 px-5">
       <Navbar />
-      <div className="flex">
-        <div className="rounded-lg w-[300px] bg-[#f0f0f0] overflow-y-auto p-5">
-          <h2>Prompts of the Day</h2>
+      <div className="flex flex-col lg:flex-row gap-5 w-full max-w-6xl mx-auto mt-5">
+        {/* Prompts Section */}
+        <div className="rounded-lg w-full lg:w-[30%] bg-[#f0f0f0] overflow-y-auto p-5">
+          <h2 className="text-xl font-semibold mb-4">Prompts of the Day</h2>
           {prompts.map((prompt, index) => (
             <div key={index} className={`bg-[white] shadow-[0_2px_4px_rgba(0,0,0,0.1)] mb-[15px] p-[15px] rounded-lg ${prompt.daysRemaining === 0 ? 'expired' : ''}`}>
               <h3 className='text-lg mt-0'>{prompt.topic}</h3>
@@ -56,7 +57,8 @@ const Home = () => {
             </div>
           ))}
         </div>
-        <div className="flex flex-col gap-5 items-center flex-1 overflow-y-auto p-5">
+        {/* Posts Section */}
+        <div className="flex flex-col gap-5 items-center flex-1 w-full">
           {loading ? (
             <p>Loading...</p>
           ) : (
