@@ -3,6 +3,7 @@ import '../assets/css/index.css';
 import Navbar from '../components/Navbar';
 import api from '../services/api';
 import SettingsIcon from '@mui/icons-material/Settings';
+import { Link } from 'react-router-dom';
 
 const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -15,6 +16,7 @@ const Profile = () => {
   const [totalLikes, setTotalLikes] = useState(0); // State to hold the total likes of user's posts
   const [avgWordCount, setAvgWordCount] = useState(0); // State to hold the average word count per post
   const [hasChanges, setHasChanges] = useState(false); // State to track if there are changes
+  const [userPosts, setUserPosts] = useState([]); // State to hold user's posts
 
   const handleSave = async () => {
     try {
@@ -85,6 +87,7 @@ const Profile = () => {
         },
       });
       const userPosts = response.data;
+      setUserPosts(userPosts); // Set the user's posts in state
       setPostsCount(userPosts.length); // Set the posts count in state
 
       // Calculate total likes from all posts
@@ -219,6 +222,24 @@ const Profile = () => {
             <div className="text-4xl font-bold text-purple-600">{avgWordCount}</div>
             <div className="text-sm text-gray-600">AVG. Word Count/Essay</div>
           </div>
+        </div>
+        <div className="mt-8">
+          <h3 className="text-2xl font-semibold mb-4">All Posts</h3>
+          {userPosts.length > 0 ? (
+            <div className="space-y-4">
+              {userPosts.map((post) => (
+                <div key={post._id} className="bg-white p-4 rounded-lg shadow">
+                  <Link to={`/posts/${post._id}`} className="text-xl font-bold text-purple-600 mb-2 block hover:underline">
+                    {post.title}
+                  </Link>
+                  <p className="text-sm text-gray-600 mb-1">{new Date(post.createdAt).toLocaleString()}</p>
+                  <div dangerouslySetInnerHTML={{ __html: post.content }} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p>No posts available.</p>
+          )}
         </div>
       </div>
     </div>
