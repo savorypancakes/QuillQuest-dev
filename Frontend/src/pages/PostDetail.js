@@ -22,6 +22,7 @@ const PostDetail = () => {
   const [hasLiked, setHasLiked] = useState(false); // Check if user already liked the post
   const [comments, setComments] = useState(0);
   const [showReplies, setShowReplies] = useState({});
+  const [avatarColor, setAvatarColor] = useState('bg-purple-600');
 
   // Function to like a post
   const handleLike = async () => {
@@ -66,6 +67,14 @@ const PostDetail = () => {
       }, 0);
       setComments(totalCommentsAndReplies);
       setLoading(false); // Set loading to false once data is loaded
+
+      // Fetch user avatar color
+      const userProfileResponse = await api.get(`/users/${response.data.userId._id}/profile`, {
+        headers: {
+          Authorization: `Bearer ${auth.token}`,
+        },
+      });
+      setAvatarColor(userProfileResponse.data.avatarColor || 'bg-purple-600');
     } catch (error) {
       console.error('Error fetching post:', error);
       setError('Failed to load the post');
@@ -109,7 +118,7 @@ const PostDetail = () => {
         <Link to="/home" className="block text-purple-600 mb-5">← Back to Home</Link>
         <div className="bg-white p-5 rounded-lg">
           <div className='flex items-center mb-5'>
-            <div className="bg-[#9500F0] text-white font-bold w-10 h-10 flex items-center justify-center overflow-hidden text-xl rounded-full mr-5">
+            <div className={`${avatarColor} text-white font-bold w-10 h-10 flex items-center justify-center overflow-hidden text-xl rounded-full mr-5`}>
               {post.userId.username.charAt(0).toUpperCase()}
             </div>
             <div className="flex flex-col">

@@ -23,6 +23,7 @@ const Profile = () => {
         {
           username: username || profileData.username,
           email: email || profileData.email,
+          avatarColor,
         },
         {
           headers: {
@@ -58,6 +59,7 @@ const Profile = () => {
       setProfileData(response.data); // Set the profile data in state
       setUsername(response.data.username);
       setEmail(response.data.email);
+      setAvatarColor(response.data.avatarColor || 'bg-purple-600'); // Set the avatar color from the response or default
     } catch (err) {
       console.error('Error fetching profile:', err);
       setError('Failed to load profile');

@@ -19,6 +19,7 @@ const Comment = ({ postId, onCommentsUpdate }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showReplies, setShowReplies] = useState({});
+  const [avatarColors, setAvatarColors] = useState({}); // Store avatar colors for each user
 
   // Fetch comments for the specific post
   useEffect(() => {
@@ -41,6 +42,31 @@ const Comment = ({ postId, onCommentsUpdate }) => {
 
     fetchComments();
   }, [postId, auth.token]);
+
+  // Fetch avatar colors for users
+  useEffect(() => {
+    const fetchAvatarColors = async () => {
+      try {
+        const userIds = [...new Set(comments.map(comment => comment.userId._id))];
+        const colors = {};
+        await Promise.all(userIds.map(async (userId) => {
+          const response = await api.get(`/users/${userId}/profile`, {
+            headers: {
+              Authorization: `Bearer ${auth.token}`,
+            },
+          });
+          colors[userId] = response.data.avatarColor || 'bg-purple-600';
+        }));
+        setAvatarColors(colors);
+      } catch (err) {
+        console.error('Error fetching avatar colors:', err);
+      }
+    };
+
+    if (comments.length > 0) {
+      fetchAvatarColors();
+    }
+  }, [comments, auth.token]);
 
   // Submit a new comment
   const handleCommentSubmit = async (e) => {
@@ -163,6 +189,7 @@ const Comment = ({ postId, onCommentsUpdate }) => {
       setLoading(false);
     }
   };
+
   return (
     <div className="comment-section bg-white p-4 shadow-lg rounded-lg">
       <h3 className="text-lg font-semibold mb-4">Comments</h3>
@@ -194,20 +221,17 @@ const Comment = ({ postId, onCommentsUpdate }) => {
           comments.map((comment) => (
             <div key={comment._id} className="flex flex-col p-2 bg-[transparent] rounded-md">
               <div className='flex mt-3'>
-                <div className="ml-3 bg-[#9500F0] text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]">
+                <div className={`${avatarColors[comment.userId._id] || 'bg-purple-600'} text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]`}>
                   <span className='font-sans font-bold'>
                     {comment.userId.username.charAt(0).toUpperCase()}
                   </span>
-                  
                 </div>
                 <div className='flex flex-col items-baseline'>
                   <p className="font-semibold">{comment.userId?.username}</p>
                   <p className="text-xs text-gray-500"> • {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}</p>
                   <p className='mt-5'>{comment.content}</p>
                 </div>
-
               </div>
-
 
               <div className="flex">
                 {comment.likes.includes(auth.user.id) ? (
@@ -238,8 +262,6 @@ const Comment = ({ postId, onCommentsUpdate }) => {
                 </button>
               </div>
 
-
-
               {showReplies[comment._id] && (
                 <div className="flex flex-col">
                   <Reply commentId={comment._id} onCommentsUpdate={setComments}/>
@@ -251,8 +273,6 @@ const Comment = ({ postId, onCommentsUpdate }) => {
           <p>No comments yet. Be the first to comment!</p>
         )}
       </div>
-
-
     </div>
   );
 };

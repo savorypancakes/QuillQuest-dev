@@ -15,6 +15,7 @@ const Navbar = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [avatarColor, setAvatarColor] = useState('bg-purple-600');
   const dropdownRef = useRef(null);
   const notificationRef = useRef(null);
   const [error, setError] = useState('');
@@ -106,6 +107,26 @@ const Navbar = () => {
     }
   }, [auth.user, auth.token]);
 
+  // Fetch user profile data to get avatar color
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await api.get('/users/profile', {
+          headers: {
+            Authorization: `Bearer ${auth.token}`,
+          },
+        });
+        setAvatarColor(response.data.avatarColor || 'bg-purple-600');
+      } catch (error) {
+        console.error('Error fetching profile data:', error);
+      }
+    };
+
+    if (auth.user) {
+      fetchProfile();
+    }
+  }, [auth.user, auth.token]);
+
   return (
     <nav className="flex justify-between items-center bg-[white] shadow-[0_2px_5px_rgba(0,0,0,0.1)] fixed top-[-5px] z-[1000] px-5 py-[5px] rounded-[25px] inset-x-0">
       <div className="flex items-center">
@@ -170,7 +191,7 @@ const Navbar = () => {
           <div ref={dropdownRef} className="relative">
             <button
               onClick={toggleDropdown}
-              className="bg-[#9500F0] text-white font-bold w-10 h-10 flex items-center justify-center overflow-hidden text-xl rounded-full"
+              className={`${avatarColor} text-white font-bold w-10 h-10 flex items-center justify-center overflow-hidden text-xl rounded-full`}
             >
               {auth.user.username.charAt(0).toUpperCase()}
             </button>

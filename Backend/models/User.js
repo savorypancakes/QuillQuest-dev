@@ -27,6 +27,10 @@ const UserSchema = new mongoose.Schema({
     type: String, // URL to user profile
     default: ''
   },
+  avatarColor: {
+    type: String,
+    default: 'bg-purple-600' // Default color for avatar
+  },
   createdAt: {
     type: Date,
     default: Date.now

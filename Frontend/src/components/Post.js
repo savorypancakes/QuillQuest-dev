@@ -13,7 +13,28 @@ const Post = ({ post }) => {
   const [likes, setLikes] = useState(post.likes.length);
   const [commentsCount, setCommentsCount] = useState(0);
   const [hasLiked, setHasLiked] = useState(post.likes.includes(auth.user.id)); // Check if user already liked the post
-  
+  const [avatarColor, setAvatarColor] = useState('bg-purple-600');
+
+  // Fetch user profile data to get avatar color
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await api.get(`/users/${post.userId._id}/profile`, {
+          headers: {
+            Authorization: `Bearer ${auth.token}`,
+          },
+        });
+        setAvatarColor(response.data.avatarColor || 'bg-purple-600');
+      } catch (error) {
+        console.error('Error fetching profile data:', error);
+      }
+    };
+
+    if (post.userId) {
+      fetchProfile();
+    }
+  }, [post.userId, auth.token]);
+
   // Calculate total comments and replies count
   useEffect(() => {
     if (post.comments) {
@@ -57,7 +78,7 @@ const Post = ({ post }) => {
     <Link to={`/posts/${post._id}`} className='hover:no-underline'>
       <div className="flex items-center mb-[15px]">
         <div className="flex">
-          <div className="bg-[#9500F0] text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]">
+          <div className={`${avatarColor} text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]`}>
             <span className='font-sans font-bold'>
               {post.userId.username.charAt(0).toUpperCase()}
             </span>
@@ -65,10 +86,8 @@ const Post = ({ post }) => {
           <div className="flex flex-col items-baseline">
             <span className="font-semibold text-black">{post.userId.username}</span>
             <span className="text-[gray] text-[0.85rem]"> • {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
-            
           </div>
         </div>
-        
       </div>
       <h2 className="text-black font-bold text-2xl text-left mt-0 mb-[15px] mx-0">{post.title}</h2>
       <div className="text-base leading-normal text-[#333]">
@@ -90,7 +109,6 @@ const Post = ({ post }) => {
         <Link to={`/posts/${post._id}`}><ChatBubbleOutlineIcon className="bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline"/></Link>
         {commentsCount}
         </span>
-        
       </div>
 
     </div>

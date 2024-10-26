@@ -13,6 +13,7 @@ const Reply = ({ commentId, onCommentsUpdate }) => {
     const [newReply, setNewReply] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [avatarColors, setAvatarColors] = useState({}); // Store avatar colors for each user
 
     // Fetch replies for the specific comment
     useEffect(() => {
@@ -34,6 +35,31 @@ const Reply = ({ commentId, onCommentsUpdate }) => {
 
         fetchReplies();
     }, [commentId, auth.token]);
+
+    // Fetch avatar colors for users
+    useEffect(() => {
+        const fetchAvatarColors = async () => {
+            try {
+                const userIds = [...new Set(replies.map(reply => reply.userId._id))];
+                const colors = {};
+                await Promise.all(userIds.map(async (userId) => {
+                    const response = await api.get(`/users/${userId}/profile`, {
+                        headers: {
+                            Authorization: `Bearer ${auth.token}`,
+                        },
+                    });
+                    colors[userId] = response.data.avatarColor || 'bg-purple-600';
+                }));
+                setAvatarColors(colors);
+            } catch (err) {
+                console.error('Error fetching avatar colors:', err);
+            }
+        };
+
+        if (replies.length > 0) {
+            fetchAvatarColors();
+        }
+    }, [replies, auth.token]);
 
     // Submit a new reply
     const handleReplySubmit = async (e) => {
@@ -133,7 +159,7 @@ const Reply = ({ commentId, onCommentsUpdate }) => {
                     replies.map((reply) => (
                         <div key={reply._id} className="reply-item p-2 bg-[transparent] rounded-md">
                             <div className='flex mt-0'>
-                                <div className="ml-3 bg-[#9500F0] text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]">
+                                <div className={`${avatarColors[reply.userId._id] || 'bg-purple-600'} text-[white] font-[bold] w-10 h-10 flex items-center justify-center mr-5 rounded-[50%]`}>
                                     <span className='font-sans font-bold'>
                                         {reply.userId.username.charAt(0).toUpperCase()}
                                     </span>
