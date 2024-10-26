@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../services/api'; // Ensure this is the correct API service you're using
 import Comment from '../components/Comment';
 import Reply from '../components/Reply';
@@ -11,9 +11,11 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import '../assets/css/index.css';
 import Navbar from '../components/Navbar';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 
 const PostDetail = () => {
   const { id } = useParams(); // Get the post ID from the URL parameter
+  const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null); // To handle errors
@@ -23,6 +25,9 @@ const PostDetail = () => {
   const [comments, setComments] = useState(0);
   const [showReplies, setShowReplies] = useState({});
   const [avatarColor, setAvatarColor] = useState('bg-purple-600');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTitle, setEditedTitle] = useState('');
+  const [editedContent, setEditedContent] = useState('');
 
   // Function to like a post
   const handleLike = async () => {
@@ -66,6 +71,8 @@ const PostDetail = () => {
         return acc + (comment.replies ? comment.replies.length : 0);
       }, 0);
       setComments(totalCommentsAndReplies);
+      setEditedTitle(response.data.title);
+      setEditedContent(response.data.content);
       setLoading(false); // Set loading to false once data is loaded
 
       // Fetch user avatar color
@@ -99,7 +106,43 @@ const PostDetail = () => {
   const handleReplyUpdate = () => {
     fetchPost();
   };
-  
+
+  // Function to handle post editing
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  // Function to save the edited post
+  const handleSaveEdit = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await api.put(
+        `/posts/${id}`,
+        {
+          title: editedTitle,
+          content: editedContent,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setPost({ ...post, title: editedTitle, content: editedContent });
+      setIsEditing(false);
+    } catch (err) {
+      console.error('Error saving post:', err);
+      setError('Failed to save the post');
+    }
+  };
+
+  // Function to cancel editing
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedTitle(post.title);
+    setEditedContent(post.content);
+  };
+
   // Loading state
   if (loading) {
     return <p>Loading post...</p>;
@@ -130,27 +173,64 @@ const PostDetail = () => {
               <div className='flex'>
                 <span className='font-semibold text-black'>{post.userId?.username || 'Unknown'}</span>
               </div>
-              
               <span className='text-gray-500 text-sm'>Posted on: {new Date(post.createdAt).toLocaleString()}</span>
             </div>
           </div>
-          <div className='flex'>
-            <h2 className="text-black font-bold text-2xl mb-4">{post.title}</h2>
-          </div>
-          
-          <div className="flex mb-4">
-            {post.postType && <div className="bg-[#9500F0] text-white text-sm inline-block px-4 py-1 rounded-full">{post.postType}</div>}
-          </div>
-          <div className="mb-5" dangerouslySetInnerHTML={{ __html: post.content }} />
-          <div className="flex items-center mb-5">
-            {hasLiked ? (
-              <ThumbUpAltIcon onClick={handleUnlike} className="text-[#9500F0] cursor-pointer mr-3" />
-            ) : (
-              <ThumbUpOffAltIcon onClick={handleLike} className="text-[#9500F0] cursor-pointer mr-3" />
+          {isEditing ? (
+            <div className="flex flex-col mb-5">
+              <input
+                type="text"
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                className="bg-white w-full p-2 border rounded-md mb-4"
+              />
+              <textarea
+                value={editedContent}
+                onChange={(e) => setEditedContent(e.target.value)}
+                className="w-full h-full p-2 border rounded-md"
+                rows="20"
+              />
+              <div className="flex space-x-2 mt-0 justify-end">
+                <button
+                  onClick={handleSaveEdit}
+                  className="w-auto px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                >
+                  Save Changes
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  className="w-auto px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className='flex'>
+                <h2 className="text-black font-bold text-2xl mb-4">{post.title}</h2>
+              </div>
+              <div className="flex mb-4">
+                {post.postType && <div className="bg-[#9500F0] text-white text-sm inline-block px-4 py-1 rounded-full">{post.postType}</div>}
+              </div>
+              <div className="mb-5" dangerouslySetInnerHTML={{ __html: post.content }} />
+            </>
+          )}
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center">
+              {hasLiked ? (
+                <ThumbUpAltIcon onClick={handleUnlike} className="text-[#9500F0] cursor-pointer mr-3" />
+              ) : (
+                <ThumbUpOffAltIcon onClick={handleLike} className="text-[#9500F0] cursor-pointer mr-3" />
+              )}
+              <span className="mr-5">{likes}</span>
+              <ChatBubbleOutlineIcon className="text-[#9500F0] cursor-pointer mr-3" />
+              <span className='mr-5'>{comments}</span>
+            </div>
+            {!isEditing && (
+              <button onClick={handleEdit} className='text-md w-auto mt-0 px-2 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700'>
+                Edit</button>
             )}
-            <span className="mr-5">{likes}</span>
-            <ChatBubbleOutlineIcon className="text-[#9500F0] cursor-pointer mr-3" />
-            <span>{comments}</span>
           </div>
           <hr className="my-5" />
           {/* Comments Section */}
