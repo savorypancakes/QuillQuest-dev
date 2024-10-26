@@ -94,6 +94,11 @@ const PostDetail = () => {
     }, 0);
     setComments(totalCommentsAndReplies);
   };
+
+  // Function to handle reply submission and update the count without refreshing
+  const handleReplyUpdate = () => {
+    fetchPost();
+  };
   
   // Loading state
   if (loading) {
@@ -149,7 +154,7 @@ const PostDetail = () => {
           </div>
           <hr className="my-5" />
           {/* Comments Section */}
-          <Comment postId={post._id} onCommentsUpdate={updateCommentsCount}/>
+          <Comment postId={post._id} onCommentsUpdate={updateCommentsCount} onReplyUpdate={handleReplyUpdate} />
         </div>
       </div>
     </div>

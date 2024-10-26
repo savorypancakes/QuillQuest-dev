@@ -12,7 +12,7 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import '../assets/css/index.css';
 import { formatDistanceToNow } from 'date-fns';
 
-const Comment = ({ postId, onCommentsUpdate }) => {
+const Comment = ({ postId, onCommentsUpdate, onReplyUpdate }) => {
   const { auth } = useContext(AuthContext); // Access auth context for user and token
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
@@ -180,6 +180,9 @@ const Comment = ({ postId, onCommentsUpdate }) => {
           return comment;
         });
         onCommentsUpdate(updatedComments); // Update the total comments count in the parent component
+        if (onReplyUpdate) {
+          onReplyUpdate();
+        }
         return updatedComments;
       });
 
@@ -264,7 +267,7 @@ const Comment = ({ postId, onCommentsUpdate }) => {
 
               {showReplies[comment._id] && (
                 <div className="flex flex-col">
-                  <Reply commentId={comment._id} onCommentsUpdate={setComments}/>
+                  <Reply commentId={comment._id} onCommentsUpdate={setComments} onReplyUpdate={onReplyUpdate} />
                 </div>
               )}
             </div>

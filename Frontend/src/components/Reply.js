@@ -7,7 +7,7 @@ import { formatDistanceToNow } from 'date-fns';
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 
-const Reply = ({ commentId, onCommentsUpdate }) => {
+const Reply = ({ commentId, onCommentsUpdate, onReplyUpdate }) => {
     const { auth } = useContext(AuthContext);
     const [replies, setReplies] = useState([]);
     const [newReply, setNewReply] = useState('');
@@ -102,6 +102,9 @@ const Reply = ({ commentId, onCommentsUpdate }) => {
                             : comment
                     )
                 );
+            }
+            if (onReplyUpdate) {
+                onReplyUpdate();
             }
             setNewReply(''); // Clear the input
             setLoading(false);
