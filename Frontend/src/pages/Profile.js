@@ -14,6 +14,7 @@ const Profile = () => {
   const [postsCount, setPostsCount] = useState(0); // State to hold the count of user's posts
   const [totalLikes, setTotalLikes] = useState(0); // State to hold the total likes of user's posts
   const [avgWordCount, setAvgWordCount] = useState(0); // State to hold the average word count per post
+  const [hasChanges, setHasChanges] = useState(false); // State to track if there are changes
 
   const handleSave = async () => {
     try {
@@ -37,6 +38,14 @@ const Profile = () => {
       console.error('Error saving profile:', err);
       setError('Failed to save profile');
     }
+  };
+
+  const handleCancel = () => {
+    // Reset to the original profile data
+    setUsername(profileData.username);
+    setEmail(profileData.email);
+    setAvatarColor(profileData.avatarColor || 'bg-purple-600');
+    setIsEditing(false);
   };
 
   const handleCustomize = () => {
@@ -96,6 +105,20 @@ const Profile = () => {
     fetchProfile();
     fetchPostsData();
   }, []);
+
+  // Track changes to username, email, or avatarColor
+  useEffect(() => {
+    if (
+      profileData &&
+      (username !== profileData.username ||
+        email !== profileData.email ||
+        avatarColor !== profileData.avatarColor)
+    ) {
+      setHasChanges(true);
+    } else {
+      setHasChanges(false);
+    }
+  }, [username, email, avatarColor, profileData]);
 
   // Display loading or error messages
   if (!profileData && !error) {
@@ -157,12 +180,21 @@ const Profile = () => {
             </div>
             <div className="mt-6 flex justify-center md:justify-end">
               {isEditing ? (
-                <button
-                  onClick={handleSave}
-                  className="w-auto px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700"
-                >
-                  Save Changes
-                </button>
+                <div className='space-x-2'>
+                  <button
+                    onClick={handleCancel}
+                    className="w-auto px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className={`w-auto px-4 py-2 rounded-xl ${hasChanges ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}
+                    disabled={!hasChanges}
+                  >
+                    Save Changes
+                  </button>
+                </div>
               ) : (
                 <button
                   onClick={() => setIsEditing(true)}
