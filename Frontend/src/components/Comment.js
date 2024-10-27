@@ -362,45 +362,56 @@ const Comment = ({ postId, onCommentsUpdate, onReplyUpdate }) => {
                 </div>
               </div>
 
-              <div className="flex">
-                {comment.likes.includes(auth.user.id) ? (
-                  <ThumbUpAltIcon
-                    onClick={() => handleUnlikeComment(comment._id)}
-                    className="bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline"
-                  />
-                ) : (
-                  <ThumbUpOffAltIcon
-                    onClick={() => handleLikeComment(comment._id)}
-                    className="bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline"
-                  />
-                )}
-                <span className='mt-5 mr-0'>{comment.likes.length}</span>
-                <button
-                  className="w-auto h-auto ml-3 p-0 m-0 bg-[transparent] text-black text-sm"
-                  onClick={() => toggleReplies(comment._id)}
-                >
-                  {showReplies[comment._id] ? (
-                    <ExpandLessIcon />
-                  ) : (
-                    <div className='flex'>
-                      <ChatBubbleOutlineIcon className='bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none]' />
-                      <span className='mt-5'>{comment.replies.length}</span>
+              <div className="flex mt-5 ml-5 space-x-5">
+                <div className='flex space-x-2'>
+                  <div className='space-x-2'>
+                    {comment.likes.includes(auth.user.id) ? (
+                      <ThumbUpAltIcon
+                        onClick={() => handleUnlikeComment(comment._id)}
+                        className="bg-transparent text-base text-[#9500F0] cursor-pointer border-[none] hover:no-underline"
+                      />
+                    ) : (
+                      <ThumbUpOffAltIcon
+                        onClick={() => handleLikeComment(comment._id)}
+                        className="bg-transparent text-base text-[#9500F0] cursor-pointer border-[none] hover:no-underline"
+                      />
+                    )}
+                    <span className='text-lg font-mono mt-5 mr-0 p-2'>{comment.likes.length}</span>
+                  </div>
+                  <div className='flex'>
+                    <button
+                      className="w-auto h-auto ml-3 p-0 m-0 bg-[transparent] text-black text-sm"
+                      onClick={() => toggleReplies(comment._id)}
+                    >
+                      {showReplies[comment._id] ? (
+                        <ExpandLessIcon />
+                      ) : (
+                        <div className='space-x-2 '>
+                          <ChatBubbleOutlineIcon className='bg-transparent text-base text-[#9500F0] cursor-pointer border-[none]' />
+                          <span className='text-lg font-mono mt-5 mr-0 p-2'>{comment.replies.length}</span>
+                        </div>
+                      )}
+                      {showReplies[comment._id] ? ' Collapse' : ''}
+                    </button>
+                  </div>
+                </div>
+
+
+                <div className='flex'>
+                  {comment.userId._id === auth.user.id && (
+                    <div className='space-x-5'>
+                      <EditIcon
+                        onClick={() => handleEditComment(comment._id, comment.content)}
+                        className="text-blue-500 cursor-pointer hover:bg-gray-100 hover:rounded-lg"
+                      />
+                      <DeleteIcon
+                        onClick={() => openDeleteModal(comment._id)}
+                        className="text-red-500 cursor-pointer hover:bg-gray-400 hover:rounded-lg"
+                      />
                     </div>
                   )}
-                  {showReplies[comment._id] ? ' Collapse' : ''}
-                </button>
-                {comment.userId._id === auth.user.id && (
-                  <>
-                    <EditIcon
-                      onClick={() => handleEditComment(comment._id, comment.content)}
-                      className="text-blue-500 cursor-pointer mt-5 mx-5 hover:bg-gray-100 hover:rounded-lg"
-                    />
-                    <DeleteIcon
-                      onClick={() => openDeleteModal(comment._id)}
-                      className="text-red-500 cursor-pointer mt-5 mx-5hover:bg-black hover:rounded-lg"
-                    />
-                  </>
-                )}
+                </div>
+
               </div>
 
               {showReplies[comment._id] && (
@@ -414,8 +425,8 @@ const Comment = ({ postId, onCommentsUpdate, onReplyUpdate }) => {
           <p>No comments yet. Be the first to comment!</p>
         )}
       </div>
-       {/* Delete Modal */}
-       {showDeleteModal && (
+      {/* Delete Modal */}
+      {showDeleteModal && (
         <DeleteModal
           onConfirm={handleDeleteComment}
           onCancel={closeDeleteModal}

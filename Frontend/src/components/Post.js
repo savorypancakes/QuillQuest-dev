@@ -105,9 +105,11 @@ const Post = ({ post }) => {
         ) : (
           <ThumbUpOffAltIcon onClick={handleLike} className="bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline"/>
         )}
-        {likes}
+        <span className='font-mono text-lg'>{likes}</span>
         <Link to={`/posts/${post._id}`}><ChatBubbleOutlineIcon className="bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline"/></Link>
-        {commentsCount}
+        <span className='font-mono text-lg'>
+          {commentsCount}
+        </span>
         </span>
       </div>
 

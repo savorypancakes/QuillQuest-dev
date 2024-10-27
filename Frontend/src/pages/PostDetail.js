@@ -252,9 +252,9 @@ const handleCloseDeleteModal = () => {
               ) : (
                 <ThumbUpOffAltIcon onClick={handleLike} className="text-[#9500F0] cursor-pointer mr-3" />
               )}
-              <span className="mr-5">{likes}</span>
+              <span className="mr-5 font-mono">{likes}</span>
               <ChatBubbleOutlineIcon className="text-[#9500F0] cursor-pointer mr-3" />
-              <span className='mr-5'>{comments}</span>
+              <span className='mr-5 font-mono'>{comments}</span>
             </div>
             {!isEditing && auth.user.id === post.userId._id && (
               <div className='flex items-center'>

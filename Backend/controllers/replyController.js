@@ -85,13 +85,50 @@ exports.deleteReply = async (req, res, next) => {
     }
 
     // Remove the reply from the database
-    await reply.remove();
+    await Reply.deleteOne({ _id: replyId });
+
+    // Remove the reply from the comment's replies array
+    await Comment.updateOne(
+      { _id: reply.commentId },
+      { $pull: { replies: replyId } }
+    );
 
     res.json({ message: 'Reply removed successfully' });
   } catch (error) {
     next(error);
   }
 };
+
+// @desc    Update a reply
+// @route   PUT /api/replies/:replyId
+// @access  Private
+exports.updateReply = async (req, res, next) => {
+  try {
+    const { replyId } = req.params;
+    const { content } = req.body;
+    const userId = req.user._id;
+
+    // Find the reply by ID
+    const reply = await Reply.findById(replyId);
+    if (!reply) {
+      return res.status(404).json({ message: 'Reply not found' });
+    }
+
+    // Check if the user is the author of the reply
+    if (reply.userId.toString() !== userId.toString()) {
+      return res.status(401).json({ message: 'Not authorized to update this reply' });
+    }
+
+    // Update the reply content
+    reply.content = content;
+    const updatedReply = await reply.save();
+
+    res.status(200).json(updatedReply);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Like a reply
 // @route   PUT /api/replies/:replyId/like
 // @access  Private

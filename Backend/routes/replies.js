@@ -9,6 +9,7 @@ const {
   deleteReply,
   likeReply,
   unlikeReply,
+  updateReply,
 } = require('../controllers/replyController');
 const {
   likeComment,
@@ -24,6 +25,11 @@ router.post('/comments/:commentId/replies', protect, createReply);
 // @desc    Get all replies for a comment
 // @access  Public
 router.get('/comments/:commentId/replies', getRepliesByComment);
+
+// @route   PUT /api/replies/:replyId
+// @desc    Update a reply
+// @access  Private
+router.put('/replies/:replyId', protect, updateReply);
 
 // @route   DELETE /api/replies/:replyId
 // @desc    Delete a reply
