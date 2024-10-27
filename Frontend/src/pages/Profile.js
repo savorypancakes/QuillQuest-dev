@@ -86,7 +86,9 @@ const Profile = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      const userPosts = response.data;
+      let userPosts = response.data;
+      // Sort posts by creation date (newest first)
+      userPosts = userPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setUserPosts(userPosts); // Set the user's posts in state
       setPostsCount(userPosts.length); // Set the posts count in state
 
