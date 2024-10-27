@@ -8,20 +8,28 @@ import CreatePost from './pages/CreatePost';
 import PostDetail from './pages/PostDetail';
 import './assets/css/App.css';
 import ProtectedRoute from './components/ProtectedRoute';
-
+import AuthenticatedRoute from './components/AuthenticatedRoute';
+import ResetPassword from './pages/ResetPassword';
+import ResetPasswordForm from './pages/ResetPasswordForm';
 
 function App() {
   return (
     <Router>
       <div className="App">
         <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/reset-password/:token" element={<ResetPasswordForm />} />
+          <Route path='/reset-password' element={<ResetPassword />} />
+          
+          {/* Prevent access to login/register if already logged in */}
+          <Route path="/" element={<AuthenticatedRoute><Login /></AuthenticatedRoute>} />
+          <Route path="/login" element={<AuthenticatedRoute><Login /></AuthenticatedRoute>} />
+          <Route path="/register" element={<AuthenticatedRoute><Register /></AuthenticatedRoute>} />
+
+          {/* Protected routes for authenticated users only */}
           <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-          <Route path='/profile' element={<ProtectedRoute><Profile /></ProtectedRoute>}/>
-          <Route path='/createpost' element={<ProtectedRoute><CreatePost /></ProtectedRoute>}/>
-          <Route path='/posts/:id' element={<ProtectedRoute><PostDetail /></ProtectedRoute>}/>
+          <Route path='/profile' element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path='/createpost' element={<ProtectedRoute><CreatePost /></ProtectedRoute>} />
+          <Route path='/posts/:id' element={<ProtectedRoute><PostDetail /></ProtectedRoute>} />
         </Routes>
       </div>
     </Router>

@@ -19,9 +19,10 @@ const commentRoutes = require('./routes/comments');
 const promptRoutes = require('./routes/prompts');
 const replyRoutes = require('./routes/replies');
 const notificationRoutes = require('./routes/notifications');
+const resetPasswordRoute = require('./routes/resetPassword');
 
 // Use Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes, resetPasswordRoute);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentRoutes);
