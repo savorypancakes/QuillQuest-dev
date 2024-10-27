@@ -80,7 +80,7 @@ exports.getCommentsByPost = async (req, res, next) => {
 exports.updateComment = async (req, res, next) => {
   const { content } = req.body;
   try {
-    let comment = await Comment.findById(req.params.id);
+    let comment = await Comment.findById(req.params.commentId);
     if (!comment) {
       return res.status(404).json({ message: 'Comment not found' });
     }
@@ -105,7 +105,7 @@ exports.updateComment = async (req, res, next) => {
 // @access  Private
 exports.deleteComment = async (req, res, next) => {
   try {
-    let comment = await Comment.findById(req.params.id);
+    const comment = await Comment.findById(req.params.commentId);
     if (!comment) {
       return res.status(404).json({ message: 'Comment not found' });
     }
@@ -115,21 +115,15 @@ exports.deleteComment = async (req, res, next) => {
       return res.status(401).json({ message: 'Not authorized to delete this comment' });
     }
 
-    // Remove the comment from the database
-    await comment.remove();
+    await comment.deleteOne();
 
-    // Remove the comment reference from the associated post or parent comment
-    if (comment.parentComment) {
-      await Comment.findByIdAndUpdate(comment.parentComment, {
-        $pull: { replies: comment._id }
-      });
-    } else {
-      await Post.findByIdAndUpdate(comment.post, {
-        $pull: { comments: comment._id }
-      });
-    }
+    // Remove the comment ID from the associated post's comments array
+    await Post.updateOne(
+      { _id: comment.postId },
+      { $pull: { comments: comment._id } }
+    );
 
-    res.json({ message: 'Comment removed successfully' });
+    res.json({ message: 'Comment successfully deleted', commentId: req.params.commentId });
   } catch (error) {
     next(error);
   }

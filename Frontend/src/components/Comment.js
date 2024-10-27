@@ -11,6 +11,9 @@ import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import '../assets/css/index.css';
 import { formatDistanceToNow } from 'date-fns';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteModal from '../components/DeleteModal';
 
 const Comment = ({ postId, onCommentsUpdate, onReplyUpdate }) => {
   const { auth } = useContext(AuthContext); // Access auth context for user and token
@@ -20,6 +23,12 @@ const Comment = ({ postId, onCommentsUpdate, onReplyUpdate }) => {
   const [error, setError] = useState('');
   const [showReplies, setShowReplies] = useState({});
   const [avatarColors, setAvatarColors] = useState({}); // Store avatar colors for each user
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState(null);
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editContent, setEditContent] = useState('');
+  const [originalContent, setOriginalContent] = useState('');
+  const [hasChanges, setHasChanges] = useState(false); // State to track if there are changes
 
   // Fetch comments for the specific post
   useEffect(() => {
@@ -67,6 +76,86 @@ const Comment = ({ postId, onCommentsUpdate, onReplyUpdate }) => {
       fetchAvatarColors();
     }
   }, [comments, auth.token]);
+
+  // Function to open delete modal for a comment
+  const openDeleteModal = (commentId) => {
+    setShowDeleteModal(true);
+    setCommentToDelete(commentId);
+  };
+
+  // Function to close the delete modal
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setCommentToDelete(null);
+  };
+
+  // Function to handle deleting a comment
+  const handleDeleteComment = async () => {
+    try {
+      await api.delete(`/comments/${commentToDelete}`, {
+        headers: {
+          Authorization: `Bearer ${auth.token}`,
+        },
+      });
+
+      // Remove the deleted comment from the comments list
+      const updatedComments = comments.filter((comment) => comment._id !== commentToDelete);
+      setComments(updatedComments);
+      onCommentsUpdate(updatedComments); // Update the parent component's comment count
+      closeDeleteModal(); // Close the modal after deletion
+    } catch (err) {
+      setError('Failed to delete the comment');
+      console.error('Error deleting the comment:', err);
+    }
+  };
+
+  // Function to handle editing a comment
+  const handleEditComment = (commentId, currentContent) => {
+    setEditingCommentId(commentId);
+    setEditContent(currentContent);
+    setOriginalContent(currentContent);
+  };
+
+  // Function to submit the edited comment
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!editContent.trim()) {
+      setError('Comment cannot be empty');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await api.put(
+        `/comments/${editingCommentId}`,
+        { content: editContent },
+        {
+          headers: {
+            Authorization: `Bearer ${auth.token}`,
+          },
+        }
+      );
+
+      // Update the comment in the comments list
+      const updatedComments = comments.map((comment) =>
+        comment._id === editingCommentId ? { ...comment, content: response.data.content } : comment
+      );
+      setComments(updatedComments);
+      onCommentsUpdate(updatedComments); // Update the total comments count in the parent component
+      setEditingCommentId(null); // Reset editing state
+      setLoading(false);
+    } catch (err) {
+      setError('Failed to edit comment');
+      setLoading(false);
+    }
+  };
+
+  // Function to cancel editing a comment
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditContent('');
+  };
 
   // Submit a new comment
   const handleCommentSubmit = async (e) => {
@@ -193,6 +282,15 @@ const Comment = ({ postId, onCommentsUpdate, onReplyUpdate }) => {
     }
   };
 
+  // Track changes to editContent and originalContent to determine if there are changes
+  useEffect(() => {
+    if (editContent !== originalContent) {
+      setHasChanges(true);
+    } else {
+      setHasChanges(false);
+    }
+  }, [editContent, originalContent]);
+
   return (
     <div className="comment-section bg-white p-4 shadow-lg rounded-lg">
       <h3 className="text-lg font-semibold mb-4">Comments</h3>
@@ -232,7 +330,35 @@ const Comment = ({ postId, onCommentsUpdate, onReplyUpdate }) => {
                 <div className='flex flex-col items-baseline'>
                   <p className="font-semibold">{comment.userId?.username}</p>
                   <p className="text-xs text-gray-500"> • {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}</p>
-                  <p className='mt-5'>{comment.content}</p>
+                  {editingCommentId === comment._id ? (
+                    <form onSubmit={handleEditSubmit} className="mt-2">
+                      <textarea
+                        className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        rows="2"
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                      />
+                      <div className="flex mt-2 space-x-2">
+                        <button
+                          type="submit"
+                          className={`w-auto px-4 py-2 rounded-xl ${hasChanges ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}
+                          disabled={loading || !hasChanges}
+                        >
+                          {loading ? 'Saving...' : 'Save'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCancelEdit}
+                          className="w-auto px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700"
+                          disabled={loading}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <p className='mt-5'>{comment.content}</p>
+                  )}
                 </div>
               </div>
 
@@ -248,21 +374,33 @@ const Comment = ({ postId, onCommentsUpdate, onReplyUpdate }) => {
                     className="bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline"
                   />
                 )}
-                <span className='mt-5 mr-5'>{comment.likes.length}</span>
+                <span className='mt-5 mr-0'>{comment.likes.length}</span>
                 <button
-                  className="w-auto h-auto p-0 m-0 bg-[transparent] text-black text-sm"
+                  className="w-auto h-auto ml-3 p-0 m-0 bg-[transparent] text-black text-sm"
                   onClick={() => toggleReplies(comment._id)}
                 >
                   {showReplies[comment._id] ? (
                     <ExpandLessIcon />
                   ) : (
-                    <div>
-                      <ChatBubbleOutlineIcon className='w-auto bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none] hover:no-underline' />
-                      <span>{comment.replies.length }</span>
+                    <div className='flex'>
+                      <ChatBubbleOutlineIcon className='bg-transparent text-base text-[#9500F0] cursor-pointer m-5 border-[none]' />
+                      <span className='mt-5'>{comment.replies.length}</span>
                     </div>
                   )}
                   {showReplies[comment._id] ? ' Collapse' : ''}
                 </button>
+                {comment.userId._id === auth.user.id && (
+                  <>
+                    <EditIcon
+                      onClick={() => handleEditComment(comment._id, comment.content)}
+                      className="text-blue-500 cursor-pointer mt-5 mx-5 hover:bg-gray-100 hover:rounded-lg"
+                    />
+                    <DeleteIcon
+                      onClick={() => openDeleteModal(comment._id)}
+                      className="text-red-500 cursor-pointer mt-5 mx-5hover:bg-black hover:rounded-lg"
+                    />
+                  </>
+                )}
               </div>
 
               {showReplies[comment._id] && (
@@ -276,6 +414,13 @@ const Comment = ({ postId, onCommentsUpdate, onReplyUpdate }) => {
           <p>No comments yet. Be the first to comment!</p>
         )}
       </div>
+       {/* Delete Modal */}
+       {showDeleteModal && (
+        <DeleteModal
+          onConfirm={handleDeleteComment}
+          onCancel={closeDeleteModal}
+        />
+      )}
     </div>
   );
 };

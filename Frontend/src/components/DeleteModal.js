@@ -5,7 +5,7 @@ const DeleteModal = ({ onConfirm, onCancel }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
       <div className="bg-white p-8 rounded-md shadow-md w-80">
         <h2 className="text-lg font-bold mb-4">Are you sure?</h2>
-        <p className="mb-8">Do you really want to delete this post? This action cannot be undone.</p>
+        <p className="mb-8">Do you really want to delete? This action cannot be undone.</p>
         <div className="flex justify-end space-x-4">
           <button
             onClick={onCancel}

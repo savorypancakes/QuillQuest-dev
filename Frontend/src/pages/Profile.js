@@ -238,7 +238,7 @@ const Profile = () => {
               ))}
             </div>
           ) : (
-            <p>No posts available.</p>
+            <p>No posts yet.</p>
           )}
         </div>
       </div>
