@@ -21,7 +21,11 @@ const EssayPreviewModal = ({ sections, essayInfo }) => {
   };
 
   const getCompletedSections = () => {
-    return sections?.filter(section => section.percentage === 100) || [];
+    // Return all sections that have content, regardless of completion percentage
+    return sections?.filter(section => {
+      const content = localStorage.getItem(`essayContent_${section.id}`);
+      return content && content.trim().length > 0;
+    }) || [];
   };
 
   const handleDownload = () => {

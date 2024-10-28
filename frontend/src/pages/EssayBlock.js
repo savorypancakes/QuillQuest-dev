@@ -134,15 +134,6 @@ const SidebarItem = ({ title, progress, isActive, isLast, id, onSelect, onDelete
         </div>
       )}
 
-      {/* Only show preview for non-body paragraphs */}
-      {hasSavedContent && !isActive && !isBodyParagraph && (
-        <div className="ml-9 mt-1">
-          <SectionPreview 
-            sectionId={id}
-            title={title}
-          />
-        </div>
-      )}
       
     </div>
 
@@ -170,6 +161,16 @@ export default function EssayBlock() {
   const [isCompleting, setIsCompleting] = useState(false);
   const [isRevision] = useState(false);
   const [hasExistingBodyParagraphs, setHasExistingBodyParagraphs] = useState(false);
+  const [existingBodyParagraphs, setExistingBodyParagraphs] = useState([]);
+
+  useEffect(() => {
+    if (allSections) {
+      const bodyParagraphs = allSections.filter(s => 
+        s.title.toLowerCase().includes('body paragraph')
+      );
+      setExistingBodyParagraphs(bodyParagraphs);
+    }
+  }, [allSections]);
   
 
   // Remove the duplicate useEffect and keep this single one
@@ -581,17 +582,37 @@ const handleComplete = async () => {
           } : undefined
         });
       // Update the body paragraph complete section handling:
-      } else if (isBodyParagraph) {
-        // Initialize updatedSections at the beginning of the body paragraph section
+    } else if (isBodyParagraph) {
+      if (completenessAnalysis.isComplete) {
+        // Section is complete - update percentage and remove requirements
+        localStorage.setItem(`essayContent_${sectionId}`, essayContent);
+        localStorage.removeItem(`sectionRequirements_${sectionId}`);
+        
         const updatedSections = allSections.map(s => 
-          s.id === sectionId ? { ...s, percentage: 50 } : s
+          s.id === sectionId ? { ...s, percentage: 100 } : s
         );
-      
-        // Save requirements for body paragraph
-        localStorage.setItem(`sectionRequirements_${sectionId}`, JSON.stringify({
-          missing: completenessAnalysis.completionStatus.missing,
-          improvements: completenessAnalysis.suggestedImprovements
-        }));
+        
+        navigate(`/essayblock/${sectionId}`, {
+          state: {
+            section: section,
+            allSections: updatedSections,
+            essayInfo
+          }
+        });
+        setIsCompleting(false);
+        return;
+      }
+    
+      // Initialize updatedSections at the beginning of the body paragraph section
+      const updatedSections = allSections.map(s => 
+        s.id === sectionId ? { ...s, percentage: 50 } : s
+      );
+    
+      // Save requirements for body paragraph
+      localStorage.setItem(`sectionRequirements_${sectionId}`, JSON.stringify({
+        missing: completenessAnalysis.completionStatus.missing,
+        improvements: completenessAnalysis.suggestedImprovements
+      }));
         
         setCompletionRequirements({
           missing: completenessAnalysis.completionStatus.missing,
@@ -723,6 +744,66 @@ const handleComplete = async () => {
     updatedSections = allSections.map(s => 
       s.id === sectionId ? { ...s, percentage: 100 } : s
     );
+
+    // Special handling for completed introduction with existing body paragraphs
+    // Special handling for completed introduction with existing body paragraphs
+    // Special handling for completed introduction with existing body paragraphs
+    if (isIntroduction && completenessAnalysis.isComplete && existingBodyParagraphs.length > 0) {
+      setCompletionRequirements({
+        isComplete: true,
+        hasBodyParagraphs: true,
+        onKeepExisting: () => {
+          // Keep existing paragraphs and move to the first one
+          setShowRequirementsModal(false);
+          navigate(`/essayblock/${existingBodyParagraphs[0].id}`, {
+            state: {
+              section: existingBodyParagraphs[0],
+              allSections: updatedSections,
+              essayInfo
+            }
+          });
+        },
+        onRegenerateBodyParagraphs: async () => {
+          try {
+            // Parse thesis and generate new body sections
+            const thesisPoints = await parseThesisPoints(essayContent);
+            const newBodySections = await generateBodySections(thesisPoints.mainPoints);
+            
+            // Remove existing body paragraphs
+            const filteredSections = updatedSections.filter(s => 
+              !s.title.toLowerCase().includes('body paragraph')
+            );
+            
+            // Find index after introduction
+            const afterIntroIndex = filteredSections.findIndex(s => 
+              s.title.toLowerCase().includes('introduction')
+            ) + 1;
+            
+            // Insert new body sections after introduction
+            const finalSections = [
+              ...filteredSections.slice(0, afterIntroIndex),
+              ...newBodySections,
+              ...filteredSections.slice(afterIntroIndex)
+            ];
+            
+            setShowRequirementsModal(false);
+            navigate(`/essayblock/${newBodySections[0].id}`, {
+              state: {
+                section: newBodySections[0],
+                allSections: finalSections,
+                essayInfo
+              }
+            });
+          } catch (error) {
+            console.error('Error generating new body sections:', error);
+            alert('Failed to generate new body paragraphs. Please try again.');
+          }
+        }
+      });
+      setShowRequirementsModal(true);
+      setIsCompleting(false);
+      return;
+    }
 
     // Handle complete sections based on type
     if (isIntroduction && !isRevisionAttempt) {
@@ -921,7 +1002,7 @@ const handleComplete = async () => {
           <h3 className="font-semibold mb-2">Essay Progress</h3>
           {allSections?.map((s, index) => {
             const isIntroduction = s.title.toLowerCase().includes('introduction');
-            const isConclusion = s.title.toLowerCase().includes('conclusion');
+            
             const isBodyParagraph = s.title.toLowerCase().includes('body paragraph');
             
             return (

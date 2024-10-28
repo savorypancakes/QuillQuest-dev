@@ -7,7 +7,7 @@ const Prompt = require('./models/Prompt');
 const cron = require('node-cron');
 const fs = require('fs');
 const path = require('path');
-const { generatePrompt } = require('./promptGenerator');
+const { generatePrompt } = require('./utils/promptGenerator');
 
 // Enhanced logging function
 const logWithTimestamp = (message) => {

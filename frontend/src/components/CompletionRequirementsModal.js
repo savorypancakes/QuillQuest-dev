@@ -5,7 +5,6 @@ export const CompletionRequirementsModal = ({
   sectionTitle,
   isRevision = false,
   hasBodyParagraphs = false,
-  onDeleteSection,
   onAcceptChanges,
   onAddBodyParagraph,
   onCompleteEssay,
@@ -50,31 +49,52 @@ export const CompletionRequirementsModal = ({
             onClick={onAddBodyParagraph}
             className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
           >
-            Add Body Paragraph
+            Add Body Manual Paragraph
           </button>
         );
       }
     } else {
       // Initial writing scenarios
       if (isIntroduction) {
-        if (meetsRequirements) {
-          buttons.push(
-            <button
-              key="generate-body"
-              onClick={requirements.onAddBodyParagraph}
-              className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
-            >
-              Generate Body Paragraphs
-            </button>
-          );
-        } else {
+        if (requirements.isComplete) {  // Introduction is complete
+          if (!hasBodyParagraphs) {  // No existing body paragraphs
+            buttons.push(
+              <button
+                key="generate-body"
+                onClick={requirements.onRegenerateBodyParagraphs}
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+              >
+                Generate Body Paragraphs from Thesis
+              </button>
+            );
+          } else {  // Has existing body paragraphs
+            buttons.push(
+              <button
+                key="generate-body"
+                onClick={requirements.onRegenerateBodyParagraphs}
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+              >
+                Regenerate Paragraphs from New Thesis
+              </button>
+            );
+            buttons.push(
+              <button
+                key="keep-existing"
+                onClick={requirements.onKeepExisting}
+                className="px-4 py-2 border-2 border-purple-600 text-purple-600 rounded hover:bg-purple-50"
+              >
+                Keep Existing Paragraphs
+              </button>
+            );
+          }
+        } else {  // Introduction is incomplete
           buttons.push(
             <button
               key="add-body"
               onClick={requirements.onAddBodyParagraph}
               className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
             >
-              Add Body Paragraph
+              Add Manual Body Paragraph
             </button>
           );
         }
@@ -135,7 +155,7 @@ export const CompletionRequirementsModal = ({
     }
 
     return buttons;
-  };
+};
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -167,7 +187,34 @@ export const CompletionRequirementsModal = ({
               ))}
             </ul>
           </div>
-          
+
+          {/* Special handling for completed introduction with existing body paragraphs */}
+          {isIntroduction && requirements?.isComplete && hasBodyParagraphs && (
+            <div className="bg-yellow-50 p-4 rounded-lg mt-4">
+              <h3 className="font-medium text-yellow-800 mb-2">Existing Body Paragraphs Found</h3>
+              <p className="text-yellow-700 mb-4">
+                You have revised your introduction successfully! You have existing body paragraphs. Would you like to:
+              </p>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={requirements.onKeepExisting}
+                  className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  Continue with existing body paragraphs
+                </button>
+                <button
+                  onClick={requirements.onRegenerateBodyParagraphs}
+                  className="w-full px-4 py-3 border-2 border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition-colors"
+                >
+                  Generate new body paragraphs based on revised thesis
+                </button>
+              </div>
+              <p className="text-sm text-yellow-600 mt-2">
+                Note: Generating new paragraphs will remove all existing body paragraphs.
+              </p>
+            </div>
+          )}
+                    
           {requirements.improvements?.length > 0 && (
             <div className="bg-blue-50 p-4 rounded-lg">
               <h3 className="font-medium text-blue-800 mb-2">Suggested Improvements:</h3>
