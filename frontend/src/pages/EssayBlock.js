@@ -50,7 +50,17 @@ const getCategoryDisplayName = (category) => {
 };
 
 
-const SidebarItem = ({ title, progress, isActive, isLast, id, onSelect, onDelete }) => {
+const SidebarItem = ({ 
+  title, 
+  progress, 
+  isActive, 
+  isLast, 
+  id, 
+  onSelect, 
+  onDelete,
+  setCompletionRequirements,
+  setShowRequirementsModal 
+}) => {
   const hasSavedContent = localStorage.getItem(`essayContent_${id}`)?.trim();
   const requirements = JSON.parse(localStorage.getItem(`sectionRequirements_${id}`) || 'null');
   const isBodyParagraph = title.toLowerCase().includes('body paragraph');
@@ -114,23 +124,21 @@ const SidebarItem = ({ title, progress, isActive, isLast, id, onSelect, onDelete
       
       {/* Requirements display */}
       {requirements && !progress && (
-        <div className="ml-9 text-xs bg-red-50 p-2 rounded-md">
-          <div className="font-medium text-red-800 mb-1">Missing Requirements:</div>
-          <ul className="list-disc pl-4 text-red-600 space-y-1">
-            {requirements.missing.map((req, idx) => (
-              <li key={idx} className="text-sm">{req}</li>
-            ))}
-          </ul>
-          {requirements.improvements && requirements.improvements.length > 0 && (
-            <>
-              <div className="font-medium text-blue-800 mt-2 mb-1">Suggestions:</div>
-              <ul className="list-disc pl-4 text-blue-600 space-y-1">
-                {requirements.improvements.map((imp, idx) => (
-                  <li key={idx} className="text-sm">{imp}</li>
-                ))}
-              </ul>
-            </>
-          )}
+        <div className="ml-9 text-xs">
+          <button
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent triggering section select
+              setCompletionRequirements({
+                missing: requirements.missing,
+                improvements: requirements.improvements,
+                isComplete: false
+              });
+              setShowRequirementsModal(true);
+            }}
+            className="w-full text-left bg-red-50 p-2 rounded-md hover:bg-red-100 transition-colors"
+          >
+            <div className="font-medium text-red-800">View Missing Requirements</div>
+          </button>
         </div>
       )}
 
@@ -228,6 +236,43 @@ export default function EssayBlock() {
     setEssayContent(newContent);
     // Immediately save the content, even if empty
     localStorage.setItem(`essayContent_${sectionId}`, newContent);
+  };
+
+  const handleAddNewBodyParagraph = () => {
+    const conclusionIndex = allSections.findIndex(s => 
+      s.title.toLowerCase().includes('conclusion')
+    );
+    
+    const bodyParagraphs = allSections.filter(s => 
+      s.title.toLowerCase().includes('body paragraph')
+    );
+    
+    const newBodySection = {
+      id: `body-${Date.now()}`,
+      title: `Body Paragraph ${bodyParagraphs.length + 1}`,
+      type: 'body',
+      percentage: 0
+    };
+    
+    let updatedSections;
+    if (conclusionIndex !== -1) {
+      updatedSections = [
+        ...allSections.slice(0, conclusionIndex),
+        newBodySection,
+        ...allSections.slice(conclusionIndex)
+      ];
+    } else {
+      updatedSections = [...allSections, newBodySection];
+    }
+    
+    setShowRequirementsModal(false);
+    navigate(`/essayblock/${newBodySection.id}`, {
+      state: {
+        section: newBodySection,
+        allSections: updatedSections,
+        essayInfo
+      }
+    });
   };
 
   const handleDeleteBodyParagraph = (paragraphId) => {
@@ -498,31 +543,33 @@ const handleComplete = async () => {
 
     // Handle sections based on type and completeness
     if (isBodyParagraph) {
+      // Check if there's a next body paragraph
+      const nextBodyParagraph = nextSectionIndex < allSections.length && 
+        allSections[nextSectionIndex].title.toLowerCase().includes('body paragraph');
+    
       if (completenessAnalysis.isComplete) {
-        // Section is complete - update percentage and remove requirements
         localStorage.removeItem(`sectionRequirements_${sectionId}`);
         
         const updatedSections = allSections.map(s => 
           s.id === sectionId ? { ...s, percentage: 100 } : s
         );
-
+    
         setCompletionRequirements({
           isComplete: true,
           missing: [],
           improvements: [],
           hasBodyParagraphs: hasExistingBodyParagraphs,
-          onContinue: () => {
+          onAddNewBodyParagraph: handleAddNewBodyParagraph,
+          onContinue: nextBodyParagraph ? () => {
             setShowRequirementsModal(false);
-            if (nextSectionIndex < updatedSections.length) {
-              navigate(`/essayblock/${updatedSections[nextSectionIndex].id}`, {
-                state: {
-                  section: updatedSections[nextSectionIndex],
-                  allSections: updatedSections,
-                  essayInfo
-                }
-              });
-            }
-          }
+            navigate(`/essayblock/${updatedSections[nextSectionIndex].id}`, {
+              state: {
+                section: updatedSections[nextSectionIndex],
+                allSections: updatedSections,
+                essayInfo
+              }
+            });
+          } : undefined
         });
         setShowRequirementsModal(true);
         setIsCompleting(false);
@@ -562,43 +609,28 @@ const handleComplete = async () => {
       const updatedSections = allSections.map(s => 
         s.id === sectionId ? { ...s, percentage: completenessAnalysis.isComplete ? 100 : 50 } : s
       );
-
-      if (completenessAnalysis.isComplete) {
-        // Remove requirements if complete
-        localStorage.removeItem(`sectionRequirements_${sectionId}`);
-        localStorage.setItem(`essayContent_${sectionId}`, essayContent);
-        
-        setCompletionRequirements({
-          isComplete: true,
-          missing: [],
-          improvements: [],
-          onCompleteEssay: () => {
-            setShowRequirementsModal(false);
-            navigate('/essaybuilder', {
-              state: {
-                allSections: updatedSections,
-                essayInfo
-              }
-            });
-          }
-        });
-      } else {
-        // Save requirements if incomplete
+    
+      if (!completenessAnalysis.isComplete) {
         localStorage.setItem(`sectionRequirements_${sectionId}`, JSON.stringify({
           missing: completenessAnalysis.completionStatus.missing,
           improvements: completenessAnalysis.suggestedImprovements
         }));
-        
-        setCompletionRequirements({
-          isComplete: false,
-          missing: completenessAnalysis.completionStatus.missing,
-          improvements: completenessAnalysis.suggestedImprovements,
-          onCompleteEssay: () => {
-            alert('Please address all requirements before completing the essay.');
-            setShowRequirementsModal(false);
-          }
-        });
       }
+    
+      setCompletionRequirements({
+        missing: completenessAnalysis.completionStatus.missing,
+        improvements: completenessAnalysis.suggestedImprovements,
+        isComplete: completenessAnalysis.isComplete,
+        onCompleteEssay: () => {
+          setShowRequirementsModal(false);
+          navigate('/essayreview', {
+            state: {
+              allSections: updatedSections,
+              essayInfo
+            }
+          });
+        }
+      });
       setShowRequirementsModal(true);
       setIsCompleting(false);
       return;
@@ -798,9 +830,11 @@ const handleComplete = async () => {
                   title={s.title} 
                   progress={s.percentage === 100}
                   isActive={s.id === sectionId}
-                  isLast={isBodyParagraph || isIntroduction} // Make body paragraphs and intro "last" to break line
+                  isLast={isBodyParagraph || isIntroduction}
                   onSelect={() => handleSectionSelect(s)}
                   onDelete={handleDeleteBodyParagraph}
+                  setCompletionRequirements={setCompletionRequirements}
+                  setShowRequirementsModal={setShowRequirementsModal}
                 />
                 {s.percentage === 100 && s.id !== sectionId && (
                   <div className="ml-9 mt-1">

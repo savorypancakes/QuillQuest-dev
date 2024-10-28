@@ -55,22 +55,30 @@ export default function EssayBuilder() {
   const location = useLocation();
 
   const [sections, setSections] = useState(() => {
-    // First check if we have sections from location state (coming from EssayBlock)
-    if (location.state?.allSections) {
-      return location.state.allSections;
+    // Clear everything if no state is passed
+    if (!location.state?.allSections) {
+      localStorage.removeItem('essaySections');
+      localStorage.removeItem('essayInfo');
+      
+      // Clear any other essay-related data
+      for (let key of Object.keys(localStorage)) {
+        if (key.startsWith('essayContent_') || 
+            key.startsWith('sectionRequirements_') ||
+            key.startsWith('essay_') ||
+            key.includes('section')) {
+          localStorage.removeItem(key);
+        }
+      }
+  
+      // Return default sections
+      return [
+        { id: 'intro', title: 'Introduction', percentage: 0 },
+        { id: 'conclusion', title: 'Conclusion', percentage: 0 },
+      ];
     }
     
-    // Then check localStorage
-    const savedSections = localStorage.getItem('essaySections');
-    if (savedSections) {
-      return JSON.parse(savedSections);
-    }
-  
-    // Finally use default if nothing exists
-    return [
-      { id: 'intro', title: 'Introduction', percentage: 0 },
-      { id: 'conclusion', title: 'Conclusion', percentage: 0 },
-    ];
+    // If we have state, use it
+    return location.state.allSections;
   });
 
   const [essayInfo, setEssayInfo] = useState(() => {

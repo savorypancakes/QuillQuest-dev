@@ -28,17 +28,17 @@ export const EssayReview = () => {
         navigate('/login', { state: { from: location } });
         return;
       }
-  
+    
       if (!fullEssayContent) {
         alert('Cannot post empty essay');
         return;
       }
-  
+    
       if (!essayInfo?.title || !essayInfo?.postType) {
         alert('Missing required essay information');
         return;
       }
-  
+    
       try {
         setIsPosting(true);
         
@@ -48,37 +48,39 @@ export const EssayReview = () => {
           postType: essayInfo.postType,
           prompt: essayInfo.promptId || null
         };
-  
-        const response = await api.post('/api/posts', postData);
-  
+    
+        const response = await api.post('/posts', postData);
+    
         if (response.data) {
-          // Clear ALL essay-related data from localStorage
+          // Clear ALL related data from localStorage
           const keys = Object.keys(localStorage);
           keys.forEach(key => {
-            if (key.startsWith('essayContent_') || 
-                key.startsWith('sectionRequirements_') ||
-                key === 'essayBuilder' ||
-                key === 'essayInfo' ||
-                key.startsWith('essay_') ||
-                key.includes('section')) {
+            // Clear essay content
+            if (key.startsWith('essayContent_')) {
+              localStorage.removeItem(key);
+            }
+            // Clear requirements
+            if (key.startsWith('sectionRequirements_')) {
+              localStorage.removeItem(key);
+            }
+            // Clear essay sections and info
+            if (key === 'essaySections' || key === 'essayInfo') {
+              localStorage.removeItem(key);
+            }
+            // Clear any other essay-related data
+            if (key.startsWith('essay_') || key.includes('section')) {
               localStorage.removeItem(key);
             }
           });
-  
-          // Navigate to posts page and clear the essay builder state
-          navigate('/posts', { 
-            replace: true, 
-            state: { message: 'Essay posted successfully!' }
-          });
-  
-          // Clear the essay builder state by navigating to it with no state
+    
+          // First navigate to essay builder with null state to reset its state
           navigate('/essaybuilder', { 
-            replace: true,
+            replace: true, 
             state: null
           });
-  
-          // Finally, navigate back to posts
-          navigate('/posts', { 
+    
+          // Then navigate to home with success message
+          navigate('/home', { 
             replace: true,
             state: { message: 'Essay posted successfully!' }
           });
@@ -99,13 +101,7 @@ export const EssayReview = () => {
       }
     };
 
-  // Add a debug button in development
-  const debugPost = () => {
-    console.log('Current auth:', auth);
-    console.log('Essay info:', essayInfo);
-    console.log('Content length:', fullEssayContent?.length);
-    console.log('All sections:', allSections);
-  };
+
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -137,14 +133,6 @@ export const EssayReview = () => {
               <PaperAirplaneIcon className="h-5 w-5 mr-2" />
               {isPosting ? 'Posting...' : 'Post Essay'}
             </button>
-            {process.env.NODE_ENV === 'development' && (
-              <button
-                onClick={debugPost}
-                className="bg-gray-500 text-white px-4 py-2 rounded-full text-sm"
-              >
-                Debug
-              </button>
-            )}
           </div>
         </header>
 
