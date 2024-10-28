@@ -279,13 +279,35 @@ export default function EssayBlock() {
     return () => clearInterval(autoSaveTimer);
   }, [essayContent, sectionId]);
 
+  // In EssayBlock.js, modify handleContentChange
   const handleContentChange = (e) => {
     const newContent = e.target.value;
     setEssayContent(newContent);
-    // Immediately save the content, even if empty
+    
+    // Save content
     localStorage.setItem(`essayContent_${sectionId}`, newContent);
+    
+    // Update section percentage
+    const updatedSections = allSections.map(s => {
+      if (s.id === sectionId) {
+        return {
+          ...s,
+          percentage: newContent.trim() ? (s.percentage || 50) : 0
+        };
+      }
+      return s;
+    });
+    
+    // Save updated sections
+    localStorage.setItem('essaySections', JSON.stringify(updatedSections));
+    
+    // Update state if location state exists
+    if (location.state) {
+      location.state.allSections = updatedSections;
+    }
   };
 
+  // In EssayBlock.js, modify the handleAddNewBodyParagraph function
   const handleAddNewBodyParagraph = () => {
     const conclusionIndex = allSections.findIndex(s => 
       s.title.toLowerCase().includes('conclusion')
@@ -312,6 +334,9 @@ export default function EssayBlock() {
     } else {
       updatedSections = [...allSections, newBodySection];
     }
+    
+    // Save the updated sections to localStorage
+    localStorage.setItem('essaySections', JSON.stringify(updatedSections));
     
     setShowRequirementsModal(false);
     navigate(`/essayblock/${newBodySection.id}`, {
@@ -573,16 +598,17 @@ const handleComplete = async () => {
     const previousContent = prevSectionId ? localStorage.getItem(`essayContent_${prevSectionId}`) : null;
     const hasPreviousContent = localStorage.getItem(`essayContent_${sectionId}`)?.trim();
 
+    // Now we can use hasPreviousContent since it's been declared
+    const isIntroduction = section?.title.toLowerCase().includes('introduction');
+    const isBodyParagraph = section?.title.toLowerCase().includes('body paragraph');
+    const isConclusion = section?.title.toLowerCase().includes('conclusion');
+    const isRevisionAttempt = hasPreviousContent && isRevision;
+
     const completenessAnalysis = await checkSectionCompleteness(
       essayContent, 
       section?.title,
       previousContent
     );
-
-    const isIntroduction = section?.title.toLowerCase().includes('introduction');
-    const isBodyParagraph = section?.title.toLowerCase().includes('body paragraph');
-    const isConclusion = section?.title.toLowerCase().includes('conclusion');
-    const isRevisionAttempt = hasPreviousContent && isRevision;
 
     // Initialize updatedSections at the beginning
     let updatedSections = allSections.map(s => 
