@@ -50,42 +50,64 @@ const getCategoryDisplayName = (category) => {
 };
 
 
-const SidebarItem = ({ title, progress, isActive, isLast, id, onSelect, onDelete }) => {
+// SidebarItem component with connecting vertical lines
+const SidebarItem = ({ 
+  title, 
+  progress, 
+  isActive, 
+  isLast, 
+  id, 
+  onSelect,
+  onDelete,
+  setCompletionRequirements,
+  setShowRequirementsModal,
+  isFirst 
+}) => {
   const hasSavedContent = localStorage.getItem(`essayContent_${id}`)?.trim();
   const requirements = JSON.parse(localStorage.getItem(`sectionRequirements_${id}`) || 'null');
   const isBodyParagraph = title.toLowerCase().includes('body paragraph');
+  const isConclusion = title.toLowerCase().includes('conclusion');
+  
+  const getCircleColor = () => {
+    if (isActive) return 'bg-purple-600';
+    return 'bg-[#F3E8FF]'; // Very light purple for inactive circles
+  };
+
+  const getTitleColor = () => {
+    if (title.toLowerCase().includes('introduction')) return 'text-purple-600';
+    if (title.toLowerCase().includes('conclusion')) return 'text-gray-700';
+    if (isBodyParagraph) return 'text-blue-600';
+    return 'text-gray-700';
+  };
   
   return (
-    <div className="space-y-1">
-      <div className="flex items-center space-x-3 py-2">
-        <div 
-          className="relative cursor-pointer group"
-          onClick={onSelect}
-        >
-          <div className={`w-6 h-6 rounded-full 
-            ${isActive ? 'bg-purple-600' : 
-              hasSavedContent ? 'bg-purple-400' : 
-              'bg-purple-200'} 
-            flex items-center justify-center transition-colors
-            hover:bg-purple-500`}
-          >
-            <div className={`w-4 h-4 rounded-full 
-              ${isActive ? 'bg-white' : 'bg-purple-600'}`} 
-              style={{ opacity: hasSavedContent || progress ? 1 : 0.3 }}
-            />
+    <div className="relative cursor-pointer group" onClick={() => onSelect && onSelect()}>
+      <div className="flex items-center py-2">
+        <div className="relative w-12 flex-shrink-0">
+          {/* Vertical line above the circle */}
+          {!isFirst && (
+            <div className="absolute left-[1.375rem] -top-4 bottom-1/2 w-0.5 bg-[#F3E8FF]" />
+          )}
+          
+          {/* Circle */}
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
+            <div className={`w-6 h-6 rounded-full ${getCircleColor()} 
+              transition-colors duration-300
+              flex items-center justify-center`}
+            >
+              <div className="w-3 h-3 rounded-full bg-white opacity-30" />
+            </div>
           </div>
-          {!isLast && (
-            <div className="absolute top-6 left-3 w-0.5 h-full bg-purple-200" />
+          
+          {/* Vertical line below the circle */}
+          {!isConclusion && (
+            <div className="absolute left-[1.375rem] top-1/2 h-8 w-0.5 bg-[#F3E8FF]" />
           )}
         </div>
 
-        
-
-        <div className="flex-1 flex items-center justify-between">
-          <span className={`text-gray-700 
-            ${isActive ? 'font-bold' : ''} 
-            ${hasSavedContent ? 'text-purple-600' : ''}`}
-          >
+        {/* Content */}
+        <div className="flex-grow flex items-center justify-between">
+          <span className={`${getTitleColor()} font-medium`}>
             {title}
             {hasSavedContent && !progress && (
               <span className="ml-2 text-xs text-purple-400">
@@ -93,6 +115,7 @@ const SidebarItem = ({ title, progress, isActive, isLast, id, onSelect, onDelete
               </span>
             )}
           </span>
+          
           {isBodyParagraph && (
             <button
               onClick={(e) => {
@@ -101,7 +124,9 @@ const SidebarItem = ({ title, progress, isActive, isLast, id, onSelect, onDelete
                   onDelete(id);
                 }
               }}
-              className="p-1 text-red-500 hover:text-red-700 ml-2"
+              className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 
+                hover:text-red-500 rounded-full hover:bg-red-50
+                transition-all duration-200"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -109,37 +134,68 @@ const SidebarItem = ({ title, progress, isActive, isLast, id, onSelect, onDelete
             </button>
           )}
         </div>
-        
       </div>
-      
-      {/* Requirements display */}
+
       {requirements && !progress && (
-        <div className="ml-9 text-xs bg-red-50 p-2 rounded-md">
-          <div className="font-medium text-red-800 mb-1">Missing Requirements:</div>
-          <ul className="list-disc pl-4 text-red-600 space-y-1">
-            {requirements.missing.map((req, idx) => (
-              <li key={idx} className="text-sm">{req}</li>
-            ))}
-          </ul>
-          {requirements.improvements && requirements.improvements.length > 0 && (
-            <>
-              <div className="font-medium text-blue-800 mt-2 mb-1">Suggestions:</div>
-              <ul className="list-disc pl-4 text-blue-600 space-y-1">
-                {requirements.improvements.map((imp, idx) => (
-                  <li key={idx} className="text-sm">{imp}</li>
-                ))}
-              </ul>
-            </>
-          )}
+        <div className="ml-12 text-xs mt-1">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setCompletionRequirements({
+                missing: requirements.missing,
+                improvements: requirements.improvements,
+                isComplete: false
+              });
+              setShowRequirementsModal(true);
+            }}
+            className="w-full text-left bg-red-50 p-2 rounded-md 
+              hover:bg-red-100 transition-colors
+              border border-red-200"
+          >
+            <div className="font-medium text-red-800">View Missing Requirements</div>
+          </button>
         </div>
       )}
-
-      
     </div>
-
-    
   );
 };
+
+// Add Body Paragraph Button with vertical connecting lines
+const AddBodyParagraphButton = ({ onClick }) => (
+  <div className="relative">
+    <div className="flex items-center py-2">
+      <div className="relative w-12 flex-shrink-0">
+        {/* Vertical line above */}
+        <div className="absolute left-[1.375rem] -top-4 bottom-1/2 w-0.5 bg-[#F3E8FF]" />
+        
+        {/* Circle */}
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
+          <div className="w-6 h-6 rounded-full bg-[#F3E8FF] flex items-center justify-center">
+            <div className="w-3 h-3 rounded-full bg-white opacity-30" />
+          </div>
+        </div>
+        
+        {/* Vertical line below */}
+        <div className="absolute left-[1.375rem] top-1/2 h-8 w-0.5 bg-[#F3E8FF]" />
+      </div>
+
+      <button
+        onClick={onClick}
+        className="flex-grow bg-purple-600 rounded-lg py-3 px-4 
+          text-white font-medium
+          transform transition-all duration-200
+          hover:bg-purple-700
+          active:scale-[0.99]
+          focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+      >
+        <div className="flex items-center justify-center space-x-2">
+          <span>Add Body Paragraph</span>
+          <PlusIcon className="h-5 w-5" />
+        </div>
+      </button>
+    </div>
+  </div>
+);
 
 export default function EssayBlock() {
   const { sectionId } = useParams();
@@ -223,11 +279,73 @@ export default function EssayBlock() {
     return () => clearInterval(autoSaveTimer);
   }, [essayContent, sectionId]);
 
+  // In EssayBlock.js, modify handleContentChange
   const handleContentChange = (e) => {
     const newContent = e.target.value;
     setEssayContent(newContent);
-    // Immediately save the content, even if empty
+    
+    // Save content
     localStorage.setItem(`essayContent_${sectionId}`, newContent);
+    
+    // Update section percentage
+    const updatedSections = allSections.map(s => {
+      if (s.id === sectionId) {
+        return {
+          ...s,
+          percentage: newContent.trim() ? (s.percentage || 50) : 0
+        };
+      }
+      return s;
+    });
+    
+    // Save updated sections
+    localStorage.setItem('essaySections', JSON.stringify(updatedSections));
+    
+    // Update state if location state exists
+    if (location.state) {
+      location.state.allSections = updatedSections;
+    }
+  };
+
+  // In EssayBlock.js, modify the handleAddNewBodyParagraph function
+  const handleAddNewBodyParagraph = () => {
+    const conclusionIndex = allSections.findIndex(s => 
+      s.title.toLowerCase().includes('conclusion')
+    );
+    
+    const bodyParagraphs = allSections.filter(s => 
+      s.title.toLowerCase().includes('body paragraph')
+    );
+    
+    const newBodySection = {
+      id: `body-${Date.now()}`,
+      title: `Body Paragraph ${bodyParagraphs.length + 1}`,
+      type: 'body',
+      percentage: 0
+    };
+    
+    let updatedSections;
+    if (conclusionIndex !== -1) {
+      updatedSections = [
+        ...allSections.slice(0, conclusionIndex),
+        newBodySection,
+        ...allSections.slice(conclusionIndex)
+      ];
+    } else {
+      updatedSections = [...allSections, newBodySection];
+    }
+    
+    // Save the updated sections to localStorage
+    localStorage.setItem('essaySections', JSON.stringify(updatedSections));
+    
+    setShowRequirementsModal(false);
+    navigate(`/essayblock/${newBodySection.id}`, {
+      state: {
+        section: newBodySection,
+        allSections: updatedSections,
+        essayInfo
+      }
+    });
   };
 
   const handleDeleteBodyParagraph = (paragraphId) => {
@@ -480,16 +598,17 @@ const handleComplete = async () => {
     const previousContent = prevSectionId ? localStorage.getItem(`essayContent_${prevSectionId}`) : null;
     const hasPreviousContent = localStorage.getItem(`essayContent_${sectionId}`)?.trim();
 
+    // Now we can use hasPreviousContent since it's been declared
+    const isIntroduction = section?.title.toLowerCase().includes('introduction');
+    const isBodyParagraph = section?.title.toLowerCase().includes('body paragraph');
+    const isConclusion = section?.title.toLowerCase().includes('conclusion');
+    const isRevisionAttempt = hasPreviousContent && isRevision;
+
     const completenessAnalysis = await checkSectionCompleteness(
       essayContent, 
       section?.title,
       previousContent
     );
-
-    const isIntroduction = section?.title.toLowerCase().includes('introduction');
-    const isBodyParagraph = section?.title.toLowerCase().includes('body paragraph');
-    const isConclusion = section?.title.toLowerCase().includes('conclusion');
-    const isRevisionAttempt = hasPreviousContent && isRevision;
 
     // Initialize updatedSections at the beginning
     let updatedSections = allSections.map(s => 
@@ -498,36 +617,53 @@ const handleComplete = async () => {
 
     // Handle sections based on type and completeness
     if (isBodyParagraph) {
+      // Check if there's a next body paragraph
+      const nextBodyParagraph = nextSectionIndex < allSections.length && 
+        allSections[nextSectionIndex].title.toLowerCase().includes('body paragraph');
+      
+      const conclusionSection = allSections.find(s => 
+        s.title.toLowerCase().includes('conclusion')
+      );
+    
       if (completenessAnalysis.isComplete) {
-        // Section is complete - update percentage and remove requirements
         localStorage.removeItem(`sectionRequirements_${sectionId}`);
         
         const updatedSections = allSections.map(s => 
           s.id === sectionId ? { ...s, percentage: 100 } : s
         );
-
+    
         setCompletionRequirements({
           isComplete: true,
           missing: [],
           improvements: [],
           hasBodyParagraphs: hasExistingBodyParagraphs,
-          onContinue: () => {
+          onAddNewBodyParagraph: handleAddNewBodyParagraph,
+          onContinue: nextBodyParagraph ? () => {
             setShowRequirementsModal(false);
-            if (nextSectionIndex < updatedSections.length) {
-              navigate(`/essayblock/${updatedSections[nextSectionIndex].id}`, {
-                state: {
-                  section: updatedSections[nextSectionIndex],
-                  allSections: updatedSections,
-                  essayInfo
-                }
-              });
-            }
-          }
+            navigate(`/essayblock/${updatedSections[nextSectionIndex].id}`, {
+              state: {
+                section: updatedSections[nextSectionIndex],
+                allSections: updatedSections,
+                essayInfo
+              }
+            });
+          } : undefined,
+          onMoveToConclusion: conclusionSection ? () => {
+            setShowRequirementsModal(false);
+            navigate(`/essayblock/${conclusionSection.id}`, {
+              state: {
+                section: conclusionSection,
+                allSections: updatedSections,
+                essayInfo
+              }
+            });
+          } : undefined
         });
         setShowRequirementsModal(true);
         setIsCompleting(false);
         return;
       }
+    
       // Handle incomplete body paragraph
       localStorage.setItem(`sectionRequirements_${sectionId}`, JSON.stringify({
         missing: completenessAnalysis.completionStatus.missing,
@@ -539,19 +675,27 @@ const handleComplete = async () => {
         improvements: completenessAnalysis.suggestedImprovements,
         isComplete: false,
         hasBodyParagraphs: hasExistingBodyParagraphs,
-        onContinue: () => {
-          if (nextSectionIndex < updatedSections.length) {
-            const nextSection = updatedSections[nextSectionIndex];
-            setShowRequirementsModal(false);
-            navigate(`/essayblock/${nextSection.id}`, {
-              state: {
-                section: nextSection,
-                allSections: updatedSections,
-                essayInfo
-              }
-            });
-          }
-        }
+        onAddNewBodyParagraph: handleAddNewBodyParagraph,
+        onMoveToConclusion: conclusionSection ? () => {
+          setShowRequirementsModal(false);
+          navigate(`/essayblock/${conclusionSection.id}`, {
+            state: {
+              section: conclusionSection,
+              allSections: updatedSections,
+              essayInfo
+            }
+          });
+        } : undefined,
+        onContinue: nextBodyParagraph ? () => {
+          setShowRequirementsModal(false);
+          navigate(`/essayblock/${updatedSections[nextSectionIndex].id}`, {
+            state: {
+              section: updatedSections[nextSectionIndex],
+              allSections: updatedSections,
+              essayInfo
+            }
+          });
+        } : undefined
       });
       setShowRequirementsModal(true);
       setIsCompleting(false);
@@ -562,43 +706,28 @@ const handleComplete = async () => {
       const updatedSections = allSections.map(s => 
         s.id === sectionId ? { ...s, percentage: completenessAnalysis.isComplete ? 100 : 50 } : s
       );
-
-      if (completenessAnalysis.isComplete) {
-        // Remove requirements if complete
-        localStorage.removeItem(`sectionRequirements_${sectionId}`);
-        localStorage.setItem(`essayContent_${sectionId}`, essayContent);
-        
-        setCompletionRequirements({
-          isComplete: true,
-          missing: [],
-          improvements: [],
-          onCompleteEssay: () => {
-            setShowRequirementsModal(false);
-            navigate('/essaybuilder', {
-              state: {
-                allSections: updatedSections,
-                essayInfo
-              }
-            });
-          }
-        });
-      } else {
-        // Save requirements if incomplete
+    
+      if (!completenessAnalysis.isComplete) {
         localStorage.setItem(`sectionRequirements_${sectionId}`, JSON.stringify({
           missing: completenessAnalysis.completionStatus.missing,
           improvements: completenessAnalysis.suggestedImprovements
         }));
-        
-        setCompletionRequirements({
-          isComplete: false,
-          missing: completenessAnalysis.completionStatus.missing,
-          improvements: completenessAnalysis.suggestedImprovements,
-          onCompleteEssay: () => {
-            alert('Please address all requirements before completing the essay.');
-            setShowRequirementsModal(false);
-          }
-        });
       }
+    
+      setCompletionRequirements({
+        missing: completenessAnalysis.completionStatus.missing,
+        improvements: completenessAnalysis.suggestedImprovements,
+        isComplete: completenessAnalysis.isComplete,
+        onCompleteEssay: () => {
+          setShowRequirementsModal(false);
+          navigate('/essayreview', {
+            state: {
+              allSections: updatedSections,
+              essayInfo
+            }
+          });
+        }
+      });
       setShowRequirementsModal(true);
       setIsCompleting(false);
       return;
@@ -726,42 +855,42 @@ const handleComplete = async () => {
   }
 };
 
-  const renderErrorPanel = () => {
-    if (!errors[activeErrorCategory]?.length) {
-      return (
-        <div className="p-4 bg-green-50 rounded-lg">
-          <p className="text-green-600">
-            Great work! No {activeErrorCategory.toLowerCase()} errors found.
-          </p>
-        </div>
-      );
-    }
-  
+const renderErrorPanel = () => {
+  if (!errors[activeErrorCategory]?.length) {
     return (
-      <div className="space-y-4">
-        {errors[activeErrorCategory].map((error, index) => (
-          <div key={index} className="p-4 bg-white rounded-lg shadow">
-            <p className="font-medium text-gray-800">{error.message}</p>
-            {error.text && (
-              <p className="mt-2 text-red-600">
-                Text: "{error.text}"
-              </p>
-            )}
-            {error.suggestions?.length > 0 && (
-              <div className="mt-2">
-                <p className="text-sm text-gray-600">Suggestions:</p>
-                <ul className="list-disc list-inside">
-                  {error.suggestions.map((suggestion, idx) => (
-                    <li key={idx} className="text-green-600">{suggestion}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        ))}
+      <div className="p-4 bg-green-50 rounded-lg">
+        <p className="text-green-600">
+          Great work! No {activeErrorCategory.toLowerCase()} errors found.
+        </p>
       </div>
     );
-  };
+  }
+
+  return (
+    <div className="space-y-4 overflow-y-auto">
+      {errors[activeErrorCategory].map((error, index) => (
+        <div key={index} className="p-4 bg-white rounded-lg shadow">
+          <p className="font-medium text-gray-800">{error.message}</p>
+          {error.text && (
+            <p className="mt-2 text-red-600 break-words">
+              Text: "{error.text}"
+            </p>
+          )}
+          {error.suggestions?.length > 0 && (
+            <div className="mt-2">
+              <p className="text-sm text-gray-600">Suggestions:</p>
+              <ul className="list-disc list-inside">
+                {error.suggestions.map((suggestion, idx) => (
+                  <li key={idx} className="text-green-600 break-words">{suggestion}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -798,9 +927,11 @@ const handleComplete = async () => {
                   title={s.title} 
                   progress={s.percentage === 100}
                   isActive={s.id === sectionId}
-                  isLast={isBodyParagraph || isIntroduction} // Make body paragraphs and intro "last" to break line
+                  isLast={isBodyParagraph || isIntroduction}
                   onSelect={() => handleSectionSelect(s)}
                   onDelete={handleDeleteBodyParagraph}
+                  setCompletionRequirements={setCompletionRequirements}
+                  setShowRequirementsModal={setShowRequirementsModal}
                 />
                 {s.percentage === 100 && s.id !== sectionId && (
                   <div className="ml-9 mt-1">
@@ -896,11 +1027,12 @@ const handleComplete = async () => {
         </header>
 
         {/* Main content area with fixed height */}
-        <div className="flex-grow p-6 overflow-hidden h-[calc(100vh-8rem)]">
-          <div className="h-full grid grid-cols-12 gap-6">
-            {/* Text editor */}
-            <div className={`${hasChecked && showErrors ? 'col-span-5' : 'col-span-12'} bg-white rounded-lg shadow overflow-hidden flex flex-col`}>
-              <div className="h-[calc(100%-60px)] p-4 overflow-hidden">
+        <div className="flex-grow p-6 overflow-hidden h-[calc(100vh-16rem)]">
+          {/* Add fixed height to grid container */}
+          <div className="grid grid-cols-12 gap-6 h-[calc(100vh-20rem)]">
+            {/* Text editor - add fixed height */}
+            <div className={`${hasChecked && showErrors ? 'col-span-5' : 'col-span-12'} bg-white rounded-lg shadow overflow-hidden flex flex-col h-[calc(100vh-20rem)]`}>
+              <div className="flex-1 p-4 overflow-hidden">
                 <textarea
                   value={essayContent}
                   onChange={handleContentChange}
@@ -909,20 +1041,20 @@ const handleComplete = async () => {
                 />
               </div>
               {hasChecked && (
-                <div className="h-[60px] px-4 py-3 border-t border-gray-200 flex items-center">
+                <div className="h-[60px] px-4 border-t border-gray-200 flex justify-center items-center">
                   <button
                     onClick={() => setShowErrors(!showErrors)}
-                    className="flex items-center space-x-2 px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                    className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500 hover:bg-purple-200 transition-colors"
                   >
                     {showErrors ? (
                       <>
-                        <EyeOffIcon className="h-5 w-5 text-gray-600" />
-                        <span>Hide Corrections</span>
+                        <EyeOffIcon className="h-5 w-5 text-white" />
+                        <span className="text-white">Hide Corrections</span>
                       </>
                     ) : (
                       <>
-                        <EyeIcon className="h-5 w-5 text-gray-600" />
-                        <span>Show Corrections</span>
+                        <EyeIcon className="h-5 w-5 text-white" />
+                        <span className="text-white">Show Corrections</span>
                       </>
                     )}
                   </button>
@@ -930,12 +1062,11 @@ const handleComplete = async () => {
               )}
             </div>
 
-            {/* Highlighted content and error panel */}
             {hasChecked && showErrors && (
               <>
-                {/* Highlighted content */}
-                <div className="col-span-4 bg-white rounded-lg shadow overflow-hidden flex flex-col">
-                  <div className="h-[calc(100%-60px)] p-4 overflow-auto">
+                {/* Highlighted content - add fixed height */}
+                <div className="col-span-4 bg-white rounded-lg shadow overflow-hidden flex flex-col h-[calc(100vh-20rem)]">
+                  <div className="flex-1 p-4 overflow-auto">
                     <div
                       className="whitespace-pre-wrap font-mono"
                       dangerouslySetInnerHTML={{ __html: highlightedContent }}
@@ -955,9 +1086,10 @@ const handleComplete = async () => {
                   </div>
                 </div>
 
-                {/* Error panel */}
-                <div className="col-span-3 flex flex-col">
-                  <div className="bg-white rounded-lg p-4 shadow mb-4">
+                {/* Error panel - add fixed height */}
+                <div className="col-span-3 flex flex-col h-[calc(100vh-20rem)]">
+                  {/* Category buttons - fixed height */}
+                  <div className="bg-white rounded-lg p-4 shadow mb-4 h-[72px]">
                     <div className="flex space-x-2 overflow-x-auto">
                       {ERROR_CATEGORIES
                         .filter(category => errors[category]?.length > 0)
@@ -976,7 +1108,8 @@ const handleComplete = async () => {
                         ))}
                     </div>
                   </div>
-                  <div className="flex-grow bg-white rounded-lg shadow overflow-auto">
+                  {/* Error list container - calculate remaining height */}
+                  <div className="bg-white rounded-lg shadow flex-1 overflow-y-auto">
                     <div className="p-4">
                       {renderErrorPanel()}
                     </div>
@@ -988,19 +1121,22 @@ const handleComplete = async () => {
         </div>
 
         {/* Footer */}
-        <footer className="bg-white border-t border-gray-200 h-16 flex items-center justify-end px-6">
+        <footer className="bg-white border-t border-gray-200 p-3 flex items-center justify-end space-x-3">
           <button
             onClick={handleCheck}
-            className="bg-blue-500 text-white px-6 py-2 rounded-full mr-4 flex items-center"
+            className="bg-blue-500 text-white px-8 py-2.5 rounded-full flex items-center text-sm disabled:opacity-50"
             disabled={isChecking}
           >
             <CheckCircleIcon className="h-5 w-5 mr-2" />
             {isChecking ? 'Checking...' : 'Check'}
           </button>
-          <CompletionButton 
-            onClick={handleComplete} 
-            isCompleting={isCompleting} 
-          />
+          <button
+            onClick={handleComplete}
+            disabled={isCompleting}
+            className="bg-green-500 text-white px-8 py-2.5 rounded-full flex items-center text-sm disabled:opacity-50"
+          >
+            {isCompleting ? 'Completing...' : 'Complete'}
+          </button>
         </footer>
         {/* Add this near the bottom of your render, before the WritingAssistant */}
         <CompletionRequirementsModal 

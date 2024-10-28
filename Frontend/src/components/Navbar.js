@@ -27,7 +27,7 @@ const Navbar = () => {
       <div className="navbar-right">
         <ul className="nav-links">
           <li><Link to="/home"> Home <HomeIcon /></Link></li>
-          <li><Link to="/createpost"> Create  <EditIcon /></Link></li>
+          <li><Link to="/essayguidance"> Create  <EditIcon /></Link></li>
         </ul>
         {/* <button className="icon-button" aria-label="Notifications">
           <NotificationsNoneIcon />

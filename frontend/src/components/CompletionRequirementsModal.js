@@ -100,35 +100,29 @@ export const CompletionRequirementsModal = ({
         }
       } else if (isBodyParagraph) {
         // For body paragraphs (both complete and incomplete)
-        buttons.push(
-          <button
-            key="next-section"
-            onClick={requirements.onContinue}
-            className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
-          >
-            Next Body Paragraph
-          </button>
-        );
+        if (requirements.onContinue) {  // Only show if there's a next body paragraph
+          buttons.push(
+            <button
+              key="next-section"
+              onClick={requirements.onContinue}
+              className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+            >
+              Next Body Paragraph
+            </button>
+          );
+        }
         
-        buttons.push(
-          <button
-            key="add-body"
-            onClick={requirements.onAddNewBodyParagraph}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            Add New Body Paragraph
-          </button>
-        );
-      
-        buttons.push(
-          <button
-            key="move-conclusion"
-            onClick={requirements.onMoveToConclusion}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Move to Conclusion
-          </button>
-        );
+        if (requirements.onAddNewBodyParagraph) {  // Only show Add New if the function exists
+          buttons.push(
+            <button
+              key="add-body"
+              onClick={requirements.onAddNewBodyParagraph}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              Add New Body Paragraph
+            </button>
+          );
+        }
       } else if (isConclusion) {
         if (meetsRequirements) {
           buttons.push(

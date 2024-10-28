@@ -22,81 +22,86 @@ export const EssayReview = () => {
     .filter(Boolean)
     .join('\n\n');
 
-  const handlePost = async () => {
-    // Check if user is logged in
-    if (!auth?.token) {
-      alert('Please log in to post your essay');
-      navigate('/login', { state: { from: location } });
-      return;
-    }
-
-    // Validate content
-    if (!fullEssayContent) {
-      alert('Cannot post empty essay');
-      return;
-    }
-
-    // Validate required fields
-    if (!essayInfo?.title || !essayInfo?.postType) {
-      alert('Missing required essay information');
-      return;
-    }
-
-    try {
-      setIsPosting(true);
-      
-      const postData = {
-        title: essayInfo.title,
-        content: fullEssayContent,
-        postType: essayInfo.postType,
-        prompt: essayInfo.promptId || null
-      };
-
-      console.log('Posting essay with data:', postData); // Debug log
-
-      const response = await api.post('/api/posts', postData);
-
-      if (response.data) {
-        console.log('Post successful:', response.data); // Debug log
-        
-        // Clear local storage after successful post
-        allSections?.forEach(section => {
-          localStorage.removeItem(`essayContent_${section.id}`);
-          localStorage.removeItem(`sectionRequirements_${section.id}`);
-        });
-
-        // Navigate to posts page with success message
-        navigate('/posts', { 
-          replace: true, 
-          state: { message: 'Essay posted successfully!' } 
-        });
-      }
-    } catch (error) {
-      console.error('Error posting essay:', error.response || error);
-      
-      // Handle different types of errors
-      if (error.response?.status === 401) {
-        alert('Your session has expired. Please log in again.');
+    const handlePost = async () => {
+      if (!auth?.token) {
+        alert('Please log in to post your essay');
         navigate('/login', { state: { from: location } });
-      } else if (error.response?.status === 400) {
-        alert(error.response.data.message || 'Invalid essay data. Please check all fields.');
-      } else if (error.response?.status === 413) {
-        alert('Essay content is too large. Please try shortening it.');
-      } else {
-        alert('Failed to post essay. Please try again later.');
+        return;
       }
-    } finally {
-      setIsPosting(false);
-    }
-  };
+    
+      if (!fullEssayContent) {
+        alert('Cannot post empty essay');
+        return;
+      }
+    
+      if (!essayInfo?.title || !essayInfo?.postType) {
+        alert('Missing required essay information');
+        return;
+      }
+    
+      try {
+        setIsPosting(true);
+        
+        const postData = {
+          title: essayInfo.title,
+          content: fullEssayContent,
+          postType: essayInfo.postType,
+          prompt: essayInfo.promptId || null
+        };
+    
+        const response = await api.post('/posts', postData);
+    
+        if (response.data) {
+          // Clear ALL related data from localStorage
+          const keys = Object.keys(localStorage);
+          keys.forEach(key => {
+            // Clear essay content
+            if (key.startsWith('essayContent_')) {
+              localStorage.removeItem(key);
+            }
+            // Clear requirements
+            if (key.startsWith('sectionRequirements_')) {
+              localStorage.removeItem(key);
+            }
+            // Clear essay sections and info
+            if (key === 'essaySections' || key === 'essayInfo') {
+              localStorage.removeItem(key);
+            }
+            // Clear any other essay-related data
+            if (key.startsWith('essay_') || key.includes('section')) {
+              localStorage.removeItem(key);
+            }
+          });
+    
+          // First navigate to essay builder with null state to reset its state
+          navigate('/essaybuilder', { 
+            replace: true, 
+            state: null
+          });
+    
+          // Then navigate to home with success message
+          navigate('/home', { 
+            replace: true,
+            state: { message: 'Essay posted successfully!' }
+          });
+        }
+      } catch (error) {
+        if (error.response?.status === 401) {
+          alert('Your session has expired. Please log in again.');
+          navigate('/login', { state: { from: location } });
+        } else if (error.response?.status === 400) {
+          alert(error.response.data.message || 'Invalid essay data. Please check all fields.');
+        } else if (error.response?.status === 413) {
+          alert('Essay content is too large. Please try shortening it.');
+        } else {
+          alert('Failed to post essay. Please try again later.');
+        }
+      } finally {
+        setIsPosting(false);
+      }
+    };
 
-  // Add a debug button in development
-  const debugPost = () => {
-    console.log('Current auth:', auth);
-    console.log('Essay info:', essayInfo);
-    console.log('Content length:', fullEssayContent?.length);
-    console.log('All sections:', allSections);
-  };
+
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -128,14 +133,6 @@ export const EssayReview = () => {
               <PaperAirplaneIcon className="h-5 w-5 mr-2" />
               {isPosting ? 'Posting...' : 'Post Essay'}
             </button>
-            {process.env.NODE_ENV === 'development' && (
-              <button
-                onClick={debugPost}
-                className="bg-gray-500 text-white px-4 py-2 rounded-full text-sm"
-              >
-                Debug
-              </button>
-            )}
           </div>
         </header>
 
