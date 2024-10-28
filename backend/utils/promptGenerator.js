@@ -1,25 +1,37 @@
-const axios = require('axios');
+const { ChatGroq } = require("@langchain/groq");
 
 exports.generatePrompt = async () => {
-  const GROQ_API_KEY = process.env.GROQ_API_KEY;
-  const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-
   try {
-    const response = await axios.post(GROQ_API_URL, {
-      model: "llama3-small",
-      messages: [
-        { role: "system", content: "You are a helpful assistant that generates essay topic prompts." },
-        { role: "user", content: "Generate a thought-provoking essay topic prompt suitable for high school or college students. The topic should be specific, engaging, and encourage critical thinking." }
-      ],
-      max_tokens: 100
-    }, {
-      headers: {
-        "Authorization": `Bearer ${GROQ_API_KEY}`,
-        "Content-Type": "application/json"
-      }
+    if (!process.env.REACT_APP_GROQ_API_KEY) {
+      throw new Error('REACT_APP_GROQ_API_KEY is not configured');
+    }
+
+    const llm = new ChatGroq({
+      apiKey: process.env.REACT_APP_GROQ_API_KEY,
+      model: "llama3-70b-8192",
+      temperature: 0.7,
+      maxTokens: 100,
     });
 
-    return response.data.choices[0].message.content.trim();
+    const systemMessage = {
+      role: "system",
+      content: `You are a helpful assistant that generates argumentative essay topic prompts. Generate only the prompt. 
+      Ensure the prompt is only one sentence length and is curt. 
+      Example: Does Technology Make Us More Alone?`
+    };
+
+    const userMessage = {
+      role: "user",
+      content: "Generate a thought-provoking essay topic prompt suitable for high school or college students. The topic should be specific, engaging, and encourage critical thinking."
+    };
+
+    const response = await llm.invoke([systemMessage, userMessage]);
+    
+    if (!response.content) {
+      throw new Error('Generated prompt is empty');
+    }
+
+    return response.content.trim();
   } catch (error) {
     console.error('Error generating prompt with GROQ:', error);
     throw error;

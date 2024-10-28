@@ -11,6 +11,10 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AuthenticatedRoute from './components/AuthenticatedRoute';
 import ResetPassword from './pages/ResetPassword';
 import ResetPasswordForm from './pages/ResetPasswordForm';
+import EssayGuidance from './pages/EssayGuidance';
+import EssayBuilder from './pages/EssayBuilder';
+import EssayBlock from './pages/EssayBlock';
+import { EssayReview } from './components/EssayReview';
 
 function App() {
   return (
@@ -26,6 +30,11 @@ function App() {
           <Route path="/register" element={<AuthenticatedRoute><Register /></AuthenticatedRoute>} />
 
           {/* Protected routes for authenticated users only */}
+
+          <Route path="/essayguidance" element={<EssayGuidance />} />
+          <Route path="/essaybuilder" element={<EssayBuilder />} />
+          <Route path="/essayblock/:sectionId" element={<EssayBlock />} />
+          <Route path="/essayreview" element={<EssayReview />} />
           <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path='/profile' element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path='/createpost' element={<ProtectedRoute><CreatePost /></ProtectedRoute>} />
