@@ -1,50 +1,103 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   HomeIcon, 
   ChatAlt2Icon, 
-  CheckCircleIcon, 
-  EyeIcon, 
-  EyeOffIcon,
   PaperAirplaneIcon 
 } from '@heroicons/react/solid';
+import { AuthContext } from '../context/AuthContext';
 import WritingAssistant from '../components/WritingAssistant';
-import { checkEssayErrors } from '../utils/essayChecker';
-import CompletionButton from '../components/CompletionButton';
 import api from '../services/api';
 
 export const EssayReview = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { auth } = useContext(AuthContext);
   const { allSections, essayInfo } = location.state || {};
   const [isPosting, setIsPosting] = useState(false);
   const [showWritingAssistant, setShowWritingAssistant] = useState(false);
 
-  // Combine all sections into one content
   const fullEssayContent = allSections
     ?.map(section => localStorage.getItem(`essayContent_${section.id}`))
     .filter(Boolean)
     .join('\n\n');
 
-  const handlePost = async () => {
-    try {
-      setIsPosting(true);
-      await api.post('/posts', {
-        title: essayInfo.title,
-        content: fullEssayContent,
-        postType: essayInfo.postType,
-        prompt: essayInfo.promptId // Make sure to pass the prompt ID
-      });
-      
-      // Redirect to posts page or show success message
-      navigate('/posts');
-    } catch (error) {
-      console.error('Error posting essay:', error);
-      alert('Failed to post essay. Please try again.');
-    } finally {
-      setIsPosting(false);
-    }
-  };
+    const handlePost = async () => {
+      if (!auth?.token) {
+        alert('Please log in to post your essay');
+        navigate('/login', { state: { from: location } });
+        return;
+      }
+  
+      if (!fullEssayContent) {
+        alert('Cannot post empty essay');
+        return;
+      }
+  
+      if (!essayInfo?.title || !essayInfo?.postType) {
+        alert('Missing required essay information');
+        return;
+      }
+  
+      try {
+        setIsPosting(true);
+        
+        const postData = {
+          title: essayInfo.title,
+          content: fullEssayContent,
+          postType: essayInfo.postType,
+          prompt: essayInfo.promptId || null
+        };
+  
+        const response = await api.post('/api/posts', postData);
+  
+        if (response.data) {
+          // Clear ALL essay-related data from localStorage
+          const keys = Object.keys(localStorage);
+          keys.forEach(key => {
+            if (key.startsWith('essayContent_') || 
+                key.startsWith('sectionRequirements_') ||
+                key === 'essayBuilder' ||
+                key === 'essayInfo' ||
+                key.startsWith('essay_') ||
+                key.includes('section')) {
+              localStorage.removeItem(key);
+            }
+          });
+  
+          // Navigate to posts page and clear the essay builder state
+          navigate('/posts', { 
+            replace: true, 
+            state: { message: 'Essay posted successfully!' }
+          });
+  
+          // Clear the essay builder state by navigating to it with no state
+          navigate('/essaybuilder', { 
+            replace: true,
+            state: null
+          });
+  
+          // Finally, navigate back to posts
+          navigate('/posts', { 
+            replace: true,
+            state: { message: 'Essay posted successfully!' }
+          });
+        }
+      } catch (error) {
+        if (error.response?.status === 401) {
+          alert('Your session has expired. Please log in again.');
+          navigate('/login', { state: { from: location } });
+        } else if (error.response?.status === 400) {
+          alert(error.response.data.message || 'Invalid essay data. Please check all fields.');
+        } else if (error.response?.status === 413) {
+          alert('Essay content is too large. Please try shortening it.');
+        } else {
+          alert('Failed to post essay. Please try again later.');
+        }
+      } finally {
+        setIsPosting(false);
+      }
+    };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -71,7 +124,7 @@ export const EssayReview = () => {
             <button
               onClick={handlePost}
               disabled={isPosting}
-              className="bg-green-600 text-white px-6 py-2 rounded-full flex items-center"
+              className="bg-green-600 text-white px-6 py-2 rounded-full flex items-center disabled:opacity-50"
             >
               <PaperAirplaneIcon className="h-5 w-5 mr-2" />
               {isPosting ? 'Posting...' : 'Post Essay'}
