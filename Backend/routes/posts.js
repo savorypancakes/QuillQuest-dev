@@ -8,7 +8,9 @@ const {
   getPosts,
   getPostById,
   updatePost,
-  deletePost
+  deletePost,
+  likePost,
+  unlikePost,
 } = require('../controllers/postController');
 
 // @route   POST /api/posts
@@ -35,5 +37,11 @@ router.put('/:id', protect, updatePost);
 // @desc    Delete a post
 // @access  Private
 router.delete('/:id', protect, deletePost);
+
+// @route   PUT /api/posts/:id/like
+router.put('/:id/like', protect, likePost);
+
+// @route   PUT /api/posts/:id/unlike
+router.put('/:id/unlike', protect, unlikePost);
 
 module.exports = router;

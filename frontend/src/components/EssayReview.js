@@ -99,6 +99,14 @@ export const EssayReview = () => {
       }
     };
 
+  // Add a debug button in development
+  const debugPost = () => {
+    console.log('Current auth:', auth);
+    console.log('Essay info:', essayInfo);
+    console.log('Content length:', fullEssayContent?.length);
+    console.log('All sections:', allSections);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="flex flex-col">
@@ -129,6 +137,14 @@ export const EssayReview = () => {
               <PaperAirplaneIcon className="h-5 w-5 mr-2" />
               {isPosting ? 'Posting...' : 'Post Essay'}
             </button>
+            {process.env.NODE_ENV === 'development' && (
+              <button
+                onClick={debugPost}
+                className="bg-gray-500 text-white px-4 py-2 rounded-full text-sm"
+              >
+                Debug
+              </button>
+            )}
           </div>
         </header>
 

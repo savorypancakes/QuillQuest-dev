@@ -17,7 +17,12 @@ const PostSchema = new mongoose.Schema({
   content: {
     type: String,
     required: true
-  },
+  }
+  ,
+  likes: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User' 
+  }],
   postType: {
     type: String,
     enum: ['discussion', 'advice'],

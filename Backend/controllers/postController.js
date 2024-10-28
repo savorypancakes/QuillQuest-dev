@@ -117,3 +117,55 @@ exports.deletePost = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Like a post
+// @route   PUT /api/posts/:id/like
+// @access  Private
+exports.likePost = async (req, res, next) => {
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check if the user has already liked the post
+    if (post.likes.includes(req.user._id)) {
+      return res.status(400).json({ message: 'You have already liked this post' });
+    }
+
+    // Add the user's ID to the likes array
+    post.likes.push(req.user._id);
+    await post.save();
+
+    res.json({ message: 'Post liked', likes: post.likes.length });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Unlike a post
+// @route   PUT /api/posts/:id/unlike
+// @access  Private
+exports.unlikePost = async (req, res, next) => {
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check if the user has not liked the post yet
+    if (!post.likes.includes(req.user._id)) {
+      return res.status(400).json({ message: 'You have not liked this post yet' });
+    }
+
+    // Remove the user's ID from the likes array
+    post.likes = post.likes.filter(userId => userId.toString() !== req.user._id.toString());
+    await post.save();
+
+    res.json({ message: 'Post unliked', likes: post.likes.length });
+  } catch (error) {
+    next(error);
+  }
+};
