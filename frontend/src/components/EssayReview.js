@@ -1,49 +1,101 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   HomeIcon, 
   ChatAlt2Icon, 
-  CheckCircleIcon, 
-  EyeIcon, 
-  EyeOffIcon,
   PaperAirplaneIcon 
 } from '@heroicons/react/solid';
+import { AuthContext } from '../context/AuthContext';
 import WritingAssistant from '../components/WritingAssistant';
-import { checkEssayErrors } from '../utils/essayChecker';
-import CompletionButton from '../components/CompletionButton';
 import api from '../services/api';
 
 export const EssayReview = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { auth } = useContext(AuthContext);
   const { allSections, essayInfo } = location.state || {};
   const [isPosting, setIsPosting] = useState(false);
   const [showWritingAssistant, setShowWritingAssistant] = useState(false);
 
-  // Combine all sections into one content
   const fullEssayContent = allSections
     ?.map(section => localStorage.getItem(`essayContent_${section.id}`))
     .filter(Boolean)
     .join('\n\n');
 
   const handlePost = async () => {
+    // Check if user is logged in
+    if (!auth?.token) {
+      alert('Please log in to post your essay');
+      navigate('/login', { state: { from: location } });
+      return;
+    }
+
+    // Validate content
+    if (!fullEssayContent) {
+      alert('Cannot post empty essay');
+      return;
+    }
+
+    // Validate required fields
+    if (!essayInfo?.title || !essayInfo?.postType) {
+      alert('Missing required essay information');
+      return;
+    }
+
     try {
       setIsPosting(true);
-      await api.post('/posts', {
+      
+      const postData = {
         title: essayInfo.title,
         content: fullEssayContent,
         postType: essayInfo.postType,
-        prompt: essayInfo.promptId // Make sure to pass the prompt ID
-      });
-      
-      // Redirect to posts page or show success message
-      navigate('/posts');
+        prompt: essayInfo.promptId || null
+      };
+
+      console.log('Posting essay with data:', postData); // Debug log
+
+      const response = await api.post('/api/posts', postData);
+
+      if (response.data) {
+        console.log('Post successful:', response.data); // Debug log
+        
+        // Clear local storage after successful post
+        allSections?.forEach(section => {
+          localStorage.removeItem(`essayContent_${section.id}`);
+          localStorage.removeItem(`sectionRequirements_${section.id}`);
+        });
+
+        // Navigate to posts page with success message
+        navigate('/posts', { 
+          replace: true, 
+          state: { message: 'Essay posted successfully!' } 
+        });
+      }
     } catch (error) {
-      console.error('Error posting essay:', error);
-      alert('Failed to post essay. Please try again.');
+      console.error('Error posting essay:', error.response || error);
+      
+      // Handle different types of errors
+      if (error.response?.status === 401) {
+        alert('Your session has expired. Please log in again.');
+        navigate('/login', { state: { from: location } });
+      } else if (error.response?.status === 400) {
+        alert(error.response.data.message || 'Invalid essay data. Please check all fields.');
+      } else if (error.response?.status === 413) {
+        alert('Essay content is too large. Please try shortening it.');
+      } else {
+        alert('Failed to post essay. Please try again later.');
+      }
     } finally {
       setIsPosting(false);
     }
+  };
+
+  // Add a debug button in development
+  const debugPost = () => {
+    console.log('Current auth:', auth);
+    console.log('Essay info:', essayInfo);
+    console.log('Content length:', fullEssayContent?.length);
+    console.log('All sections:', allSections);
   };
 
   return (
@@ -71,11 +123,19 @@ export const EssayReview = () => {
             <button
               onClick={handlePost}
               disabled={isPosting}
-              className="bg-green-600 text-white px-6 py-2 rounded-full flex items-center"
+              className="bg-green-600 text-white px-6 py-2 rounded-full flex items-center disabled:opacity-50"
             >
               <PaperAirplaneIcon className="h-5 w-5 mr-2" />
               {isPosting ? 'Posting...' : 'Post Essay'}
             </button>
+            {process.env.NODE_ENV === 'development' && (
+              <button
+                onClick={debugPost}
+                className="bg-gray-500 text-white px-4 py-2 rounded-full text-sm"
+              >
+                Debug
+              </button>
+            )}
           </div>
         </header>
 
