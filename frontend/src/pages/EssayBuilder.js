@@ -161,15 +161,23 @@ export default function EssayBuilder() {
   const addSection = () => {
     const newSection = { 
       id: `body-${Date.now()}`, 
-      title: `Body Paragraph ${sections.length - 1}`, 
+      title: `Body Paragraph ${sections.filter(s => 
+        s.title.toLowerCase().includes('body paragraph')
+      ).length + 1}`, 
       percentage: 0,
       type: 'body'
     };
     
+    // Find the conclusion section index
+    const conclusionIndex = sections.findIndex(s => 
+      s.title.toLowerCase().includes('conclusion')
+    );
+    
+    // Insert the new section before the conclusion
     const updatedSections = [
-      ...sections.slice(0, -1), 
-      newSection, 
-      sections[sections.length - 1]
+      ...sections.slice(0, conclusionIndex),
+      newSection,
+      ...sections.slice(conclusionIndex)
     ];
     
     setSections(updatedSections);
@@ -259,30 +267,46 @@ export default function EssayBuilder() {
 
         {/* Section list */}
         <div className="space-y-4">
-          {sections.map((section, index) => (
-            <div key={section.id}>
-              <EssaySection 
-                title={section.title} 
-                percentage={section.percentage} 
-                isLast={index === sections.length - 1}
-                onClick={() => handleSectionClick(index)}
-                onDelete={() => deleteSection(index)}
-                showDelete={section.title.toLowerCase().includes('body paragraph')}
-              />
-            </div>
-          ))}
-          
-          {sections.length < 7 && (
-            <button
-              onClick={addSection}
-              className="w-full bg-white text-purple-600 border-2 border-purple-600 rounded-full 
-                py-2 px-4 font-medium hover:bg-purple-100 transition-colors mb-4 flex items-center 
-                justify-center focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
-            >
-              <PlusIcon className="w-5 h-5 mr-2" />
-              Add Body Paragraph
-            </button>
-          )}
+          {sections.map((section, index) => {
+            const isBodyParagraph = section.title.toLowerCase().includes('body paragraph');
+            const isIntroduction = section.title.toLowerCase().includes('introduction');
+            const isConclusion = section.title.toLowerCase().includes('conclusion');
+            
+            return (
+              <React.Fragment key={section.id}>
+                <EssaySection 
+                  title={section.title} 
+                  percentage={section.percentage} 
+                  isLast={false}
+                  onClick={() => handleSectionClick(index)}
+                  onDelete={() => isBodyParagraph ? deleteSection(index) : null}
+                  showDelete={isBodyParagraph}
+                />
+                
+                {/* Add Body Paragraph button after Introduction or last Body Paragraph */}
+                {sections.filter(s => 
+                  s.title.toLowerCase().includes('body paragraph')
+                ).length < 5 && 
+                ((isIntroduction && !sections.some(s => s.title.toLowerCase().includes('body paragraph'))) ||
+                (isBodyParagraph && sections[index + 1]?.title.toLowerCase().includes('conclusion'))) && (
+                  <div className="relative">
+                    <button
+                      onClick={addSection}
+                      className="w-full bg-white text-purple-600 border-2 border-dashed 
+                        border-purple-600 rounded-full py-2 px-4 font-medium 
+                        hover:bg-purple-100 transition-colors mb-4 flex items-center 
+                        justify-center focus:outline-none focus:ring-2 focus:ring-purple-500 
+                        focus:ring-opacity-50"
+                    >
+                      <PlusIcon className="w-5 h-5 mr-2" />
+                      Add Body Paragraph
+                    </button>
+                    <div className="absolute left-1/2 top-full w-0.5 h-4 bg-purple-600 -translate-x-1/2" />
+                  </div>
+                )}
+              </React.Fragment>
+            );
+          })}
         </div>
 
         {/* Footer buttons */}
@@ -290,14 +314,16 @@ export default function EssayBuilder() {
           <button
             onClick={handleCancel}
             className="bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600 
-              transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
+              transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 
+              focus:ring-opacity-50"
           >
             Cancel
           </button>
           <button 
             onClick={handleNextClick}
             className="bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700 
-              transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
+              transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 
+              focus:ring-opacity-50"
           >
             Next
           </button>
