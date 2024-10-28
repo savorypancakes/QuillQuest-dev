@@ -24,31 +24,37 @@ const ProgressCircle = ({ percentage }) => (
   </div>
 );
 
-const EssaySection = ({ title, percentage, isLast, onClick, onDelete, showDelete }) => (
-  <div className="relative">
-    <div className="flex items-center mb-4">
-      <button
-        onClick={onClick}
-        className="flex-grow flex items-center justify-between bg-purple-600 text-white rounded-full py-2 px-4 z-10 relative hover:bg-purple-700 transition-colors"
-      >
-        <span>{title}</span>
-        <ProgressCircle percentage={percentage} />
-      </button>
-      {showDelete && (
+const EssaySection = ({ title, percentage, isLast, onClick, onDelete, showDelete }) => {
+  const isConclusion = title.toLowerCase().includes('conclusion');
+
+  return (
+    <div className="relative">
+      <div className="flex items-center mb-4">
         <button
-          onClick={onDelete}
-          className="ml-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600"
-          aria-label="Delete paragraph"
+          onClick={onClick}
+          className="flex-grow flex items-center justify-between bg-purple-600 text-white 
+            rounded-full py-2 px-4 z-10 relative hover:bg-purple-700 transition-colors"
         >
-          <XIcon className="h-5 w-5" />
+          <span>{title}</span>
+          <ProgressCircle percentage={percentage} />
         </button>
+        {showDelete && (
+          <button
+            onClick={onDelete}
+            className="ml-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600"
+            aria-label="Delete paragraph"
+          >
+            <XIcon className="h-5 w-5" />
+          </button>
+        )}
+      </div>
+      {/* Only show the vertical line if it's not the conclusion */}
+      {!isConclusion && (
+        <div className="absolute left-1/2 top-full w-0.5 h-4 bg-purple-600 -translate-x-1/2"></div>
       )}
     </div>
-    {!isLast && (
-      <div className="absolute left-1/2 top-full w-0.5 h-4 bg-purple-600 -translate-x-1/2"></div>
-    )}
-  </div>
-);
+  );
+};
 
 export default function EssayBuilder() {
   const navigate = useNavigate();
@@ -276,19 +282,18 @@ export default function EssayBuilder() {
               <React.Fragment key={section.id}>
                 <EssaySection 
                   title={section.title} 
-                  percentage={section.percentage} 
-                  isLast={false}
+                  percentage={section.percentage}
                   onClick={() => handleSectionClick(index)}
                   onDelete={() => isBodyParagraph ? deleteSection(index) : null}
                   showDelete={isBodyParagraph}
                 />
                 
-                {/* Add Body Paragraph button after Introduction or last Body Paragraph */}
-                {sections.filter(s => 
-                  s.title.toLowerCase().includes('body paragraph')
-                ).length < 5 && 
-                ((isIntroduction && !sections.some(s => s.title.toLowerCase().includes('body paragraph'))) ||
-                (isBodyParagraph && sections[index + 1]?.title.toLowerCase().includes('conclusion'))) && (
+                {/* Add Body Paragraph button after Introduction or last Body Paragraph,
+                    but only if we're not at the conclusion */}
+                {!isConclusion && 
+                 sections.filter(s => s.title.toLowerCase().includes('body paragraph')).length < 5 && 
+                 ((isIntroduction && !sections.some(s => s.title.toLowerCase().includes('body paragraph'))) ||
+                 (isBodyParagraph && sections[index + 1]?.title.toLowerCase().includes('conclusion'))) && (
                   <div className="relative">
                     <button
                       onClick={addSection}

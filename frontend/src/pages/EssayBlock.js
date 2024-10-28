@@ -855,42 +855,42 @@ const handleComplete = async () => {
   }
 };
 
-  const renderErrorPanel = () => {
-    if (!errors[activeErrorCategory]?.length) {
-      return (
-        <div className="p-4 bg-green-50 rounded-lg">
-          <p className="text-green-600">
-            Great work! No {activeErrorCategory.toLowerCase()} errors found.
-          </p>
-        </div>
-      );
-    }
-  
+const renderErrorPanel = () => {
+  if (!errors[activeErrorCategory]?.length) {
     return (
-      <div className="space-y-4">
-        {errors[activeErrorCategory].map((error, index) => (
-          <div key={index} className="p-4 bg-white rounded-lg shadow">
-            <p className="font-medium text-gray-800">{error.message}</p>
-            {error.text && (
-              <p className="mt-2 text-red-600">
-                Text: "{error.text}"
-              </p>
-            )}
-            {error.suggestions?.length > 0 && (
-              <div className="mt-2">
-                <p className="text-sm text-gray-600">Suggestions:</p>
-                <ul className="list-disc list-inside">
-                  {error.suggestions.map((suggestion, idx) => (
-                    <li key={idx} className="text-green-600">{suggestion}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        ))}
+      <div className="p-4 bg-green-50 rounded-lg">
+        <p className="text-green-600">
+          Great work! No {activeErrorCategory.toLowerCase()} errors found.
+        </p>
       </div>
     );
-  };
+  }
+
+  return (
+    <div className="space-y-4 overflow-y-auto">
+      {errors[activeErrorCategory].map((error, index) => (
+        <div key={index} className="p-4 bg-white rounded-lg shadow">
+          <p className="font-medium text-gray-800">{error.message}</p>
+          {error.text && (
+            <p className="mt-2 text-red-600 break-words">
+              Text: "{error.text}"
+            </p>
+          )}
+          {error.suggestions?.length > 0 && (
+            <div className="mt-2">
+              <p className="text-sm text-gray-600">Suggestions:</p>
+              <ul className="list-disc list-inside">
+                {error.suggestions.map((suggestion, idx) => (
+                  <li key={idx} className="text-green-600 break-words">{suggestion}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -1027,11 +1027,12 @@ const handleComplete = async () => {
         </header>
 
         {/* Main content area with fixed height */}
-        <div className="flex-grow p-6 overflow-hidden h-[calc(100vh-8rem)]">
-          <div className="h-full grid grid-cols-12 gap-6">
-            {/* Text editor */}
-            <div className={`${hasChecked && showErrors ? 'col-span-5' : 'col-span-12'} bg-white rounded-lg shadow overflow-hidden flex flex-col`}>
-              <div className="h-[calc(100%-60px)] p-4 overflow-hidden">
+        <div className="flex-grow p-6 overflow-hidden h-[calc(100vh-16rem)]">
+          {/* Add fixed height to grid container */}
+          <div className="grid grid-cols-12 gap-6 h-[calc(100vh-20rem)]">
+            {/* Text editor - add fixed height */}
+            <div className={`${hasChecked && showErrors ? 'col-span-5' : 'col-span-12'} bg-white rounded-lg shadow overflow-hidden flex flex-col h-[calc(100vh-20rem)]`}>
+              <div className="flex-1 p-4 overflow-hidden">
                 <textarea
                   value={essayContent}
                   onChange={handleContentChange}
@@ -1040,20 +1041,20 @@ const handleComplete = async () => {
                 />
               </div>
               {hasChecked && (
-                <div className="h-[60px] px-4 py-3 border-t border-gray-200 flex items-center">
+                <div className="h-[60px] px-4 border-t border-gray-200 flex justify-center items-center">
                   <button
                     onClick={() => setShowErrors(!showErrors)}
-                    className="flex items-center space-x-2 px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                    className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500 hover:bg-purple-200 transition-colors"
                   >
                     {showErrors ? (
                       <>
-                        <EyeOffIcon className="h-5 w-5 text-gray-600" />
-                        <span>Hide Corrections</span>
+                        <EyeOffIcon className="h-5 w-5 text-white" />
+                        <span className="text-white">Hide Corrections</span>
                       </>
                     ) : (
                       <>
-                        <EyeIcon className="h-5 w-5 text-gray-600" />
-                        <span>Show Corrections</span>
+                        <EyeIcon className="h-5 w-5 text-white" />
+                        <span className="text-white">Show Corrections</span>
                       </>
                     )}
                   </button>
@@ -1061,12 +1062,11 @@ const handleComplete = async () => {
               )}
             </div>
 
-            {/* Highlighted content and error panel */}
             {hasChecked && showErrors && (
               <>
-                {/* Highlighted content */}
-                <div className="col-span-4 bg-white rounded-lg shadow overflow-hidden flex flex-col">
-                  <div className="h-[calc(100%-60px)] p-4 overflow-auto">
+                {/* Highlighted content - add fixed height */}
+                <div className="col-span-4 bg-white rounded-lg shadow overflow-hidden flex flex-col h-[calc(100vh-20rem)]">
+                  <div className="flex-1 p-4 overflow-auto">
                     <div
                       className="whitespace-pre-wrap font-mono"
                       dangerouslySetInnerHTML={{ __html: highlightedContent }}
@@ -1086,9 +1086,10 @@ const handleComplete = async () => {
                   </div>
                 </div>
 
-                {/* Error panel */}
-                <div className="col-span-3 flex flex-col">
-                  <div className="bg-white rounded-lg p-4 shadow mb-4">
+                {/* Error panel - add fixed height */}
+                <div className="col-span-3 flex flex-col h-[calc(100vh-20rem)]">
+                  {/* Category buttons - fixed height */}
+                  <div className="bg-white rounded-lg p-4 shadow mb-4 h-[72px]">
                     <div className="flex space-x-2 overflow-x-auto">
                       {ERROR_CATEGORIES
                         .filter(category => errors[category]?.length > 0)
@@ -1107,7 +1108,8 @@ const handleComplete = async () => {
                         ))}
                     </div>
                   </div>
-                  <div className="flex-grow bg-white rounded-lg shadow overflow-auto">
+                  {/* Error list container - calculate remaining height */}
+                  <div className="bg-white rounded-lg shadow flex-1 overflow-y-auto">
                     <div className="p-4">
                       {renderErrorPanel()}
                     </div>
