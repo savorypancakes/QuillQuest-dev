@@ -546,6 +546,10 @@ const handleComplete = async () => {
       // Check if there's a next body paragraph
       const nextBodyParagraph = nextSectionIndex < allSections.length && 
         allSections[nextSectionIndex].title.toLowerCase().includes('body paragraph');
+      
+      const conclusionSection = allSections.find(s => 
+        s.title.toLowerCase().includes('conclusion')
+      );
     
       if (completenessAnalysis.isComplete) {
         localStorage.removeItem(`sectionRequirements_${sectionId}`);
@@ -569,12 +573,23 @@ const handleComplete = async () => {
                 essayInfo
               }
             });
+          } : undefined,
+          onMoveToConclusion: conclusionSection ? () => {
+            setShowRequirementsModal(false);
+            navigate(`/essayblock/${conclusionSection.id}`, {
+              state: {
+                section: conclusionSection,
+                allSections: updatedSections,
+                essayInfo
+              }
+            });
           } : undefined
         });
         setShowRequirementsModal(true);
         setIsCompleting(false);
         return;
       }
+    
       // Handle incomplete body paragraph
       localStorage.setItem(`sectionRequirements_${sectionId}`, JSON.stringify({
         missing: completenessAnalysis.completionStatus.missing,
@@ -586,19 +601,27 @@ const handleComplete = async () => {
         improvements: completenessAnalysis.suggestedImprovements,
         isComplete: false,
         hasBodyParagraphs: hasExistingBodyParagraphs,
-        onContinue: () => {
-          if (nextSectionIndex < updatedSections.length) {
-            const nextSection = updatedSections[nextSectionIndex];
-            setShowRequirementsModal(false);
-            navigate(`/essayblock/${nextSection.id}`, {
-              state: {
-                section: nextSection,
-                allSections: updatedSections,
-                essayInfo
-              }
-            });
-          }
-        }
+        onAddNewBodyParagraph: handleAddNewBodyParagraph,
+        onMoveToConclusion: conclusionSection ? () => {
+          setShowRequirementsModal(false);
+          navigate(`/essayblock/${conclusionSection.id}`, {
+            state: {
+              section: conclusionSection,
+              allSections: updatedSections,
+              essayInfo
+            }
+          });
+        } : undefined,
+        onContinue: nextBodyParagraph ? () => {
+          setShowRequirementsModal(false);
+          navigate(`/essayblock/${updatedSections[nextSectionIndex].id}`, {
+            state: {
+              section: updatedSections[nextSectionIndex],
+              allSections: updatedSections,
+              essayInfo
+            }
+          });
+        } : undefined
       });
       setShowRequirementsModal(true);
       setIsCompleting(false);
