@@ -1045,19 +1045,22 @@ const handleComplete = async () => {
         </div>
 
         {/* Footer */}
-        <footer className="bg-white border-t border-gray-200 h-16 flex items-center justify-end px-6">
+        <footer className="bg-white border-t border-gray-200 p-3 flex items-center justify-end space-x-3">
           <button
             onClick={handleCheck}
-            className="bg-blue-500 text-white px-6 py-2 rounded-full mr-4 flex items-center"
+            className="bg-blue-500 text-white px-8 py-2.5 rounded-full flex items-center text-sm disabled:opacity-50"
             disabled={isChecking}
           >
             <CheckCircleIcon className="h-5 w-5 mr-2" />
             {isChecking ? 'Checking...' : 'Check'}
           </button>
-          <CompletionButton 
-            onClick={handleComplete} 
-            isCompleting={isCompleting} 
-          />
+          <button
+            onClick={handleComplete}
+            disabled={isCompleting}
+            className="bg-green-500 text-white px-8 py-2.5 rounded-full flex items-center text-sm disabled:opacity-50"
+          >
+            {isCompleting ? 'Completing...' : 'Complete'}
+          </button>
         </footer>
         {/* Add this near the bottom of your render, before the WritingAssistant */}
         <CompletionRequirementsModal 
