@@ -50,52 +50,64 @@ const getCategoryDisplayName = (category) => {
 };
 
 
+// SidebarItem component with connecting vertical lines
 const SidebarItem = ({ 
   title, 
   progress, 
   isActive, 
   isLast, 
   id, 
-  onSelect, 
+  onSelect,
   onDelete,
   setCompletionRequirements,
-  setShowRequirementsModal 
+  setShowRequirementsModal,
+  isFirst 
 }) => {
   const hasSavedContent = localStorage.getItem(`essayContent_${id}`)?.trim();
   const requirements = JSON.parse(localStorage.getItem(`sectionRequirements_${id}`) || 'null');
   const isBodyParagraph = title.toLowerCase().includes('body paragraph');
+  const isConclusion = title.toLowerCase().includes('conclusion');
+  
+  const getCircleColor = () => {
+    if (isActive) return 'bg-purple-600';
+    return 'bg-[#F3E8FF]'; // Very light purple for inactive circles
+  };
+
+  const getTitleColor = () => {
+    if (title.toLowerCase().includes('introduction')) return 'text-purple-600';
+    if (title.toLowerCase().includes('conclusion')) return 'text-gray-700';
+    if (isBodyParagraph) return 'text-blue-600';
+    return 'text-gray-700';
+  };
   
   return (
-    <div className="space-y-1">
-      <div className="flex items-center space-x-3 py-2">
-        <div 
-          className="relative cursor-pointer group"
-          onClick={onSelect}
-        >
-          <div className={`w-6 h-6 rounded-full 
-            ${isActive ? 'bg-purple-600' : 
-              hasSavedContent ? 'bg-purple-400' : 
-              'bg-purple-200'} 
-            flex items-center justify-center transition-colors
-            hover:bg-purple-500`}
-          >
-            <div className={`w-4 h-4 rounded-full 
-              ${isActive ? 'bg-white' : 'bg-purple-600'}`} 
-              style={{ opacity: hasSavedContent || progress ? 1 : 0.3 }}
-            />
+    <div className="relative cursor-pointer group" onClick={() => onSelect && onSelect()}>
+      <div className="flex items-center py-2">
+        <div className="relative w-12 flex-shrink-0">
+          {/* Vertical line above the circle */}
+          {!isFirst && (
+            <div className="absolute left-[1.375rem] -top-4 bottom-1/2 w-0.5 bg-[#F3E8FF]" />
+          )}
+          
+          {/* Circle */}
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
+            <div className={`w-6 h-6 rounded-full ${getCircleColor()} 
+              transition-colors duration-300
+              flex items-center justify-center`}
+            >
+              <div className="w-3 h-3 rounded-full bg-white opacity-30" />
+            </div>
           </div>
-          {!isLast && (
-            <div className="absolute top-6 left-3 w-0.5 h-full bg-purple-200" />
+          
+          {/* Vertical line below the circle */}
+          {!isConclusion && (
+            <div className="absolute left-[1.375rem] top-1/2 h-8 w-0.5 bg-[#F3E8FF]" />
           )}
         </div>
 
-        
-
-        <div className="flex-1 flex items-center justify-between">
-          <span className={`text-gray-700 
-            ${isActive ? 'font-bold' : ''} 
-            ${hasSavedContent ? 'text-purple-600' : ''}`}
-          >
+        {/* Content */}
+        <div className="flex-grow flex items-center justify-between">
+          <span className={`${getTitleColor()} font-medium`}>
             {title}
             {hasSavedContent && !progress && (
               <span className="ml-2 text-xs text-purple-400">
@@ -103,6 +115,7 @@ const SidebarItem = ({
               </span>
             )}
           </span>
+          
           {isBodyParagraph && (
             <button
               onClick={(e) => {
@@ -111,7 +124,9 @@ const SidebarItem = ({
                   onDelete(id);
                 }
               }}
-              className="p-1 text-red-500 hover:text-red-700 ml-2"
+              className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 
+                hover:text-red-500 rounded-full hover:bg-red-50
+                transition-all duration-200"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -119,15 +134,13 @@ const SidebarItem = ({
             </button>
           )}
         </div>
-        
       </div>
-      
-      {/* Requirements display */}
+
       {requirements && !progress && (
-        <div className="ml-9 text-xs">
+        <div className="ml-12 text-xs mt-1">
           <button
             onClick={(e) => {
-              e.stopPropagation(); // Prevent triggering section select
+              e.stopPropagation();
               setCompletionRequirements({
                 missing: requirements.missing,
                 improvements: requirements.improvements,
@@ -135,19 +148,54 @@ const SidebarItem = ({
               });
               setShowRequirementsModal(true);
             }}
-            className="w-full text-left bg-red-50 p-2 rounded-md hover:bg-red-100 transition-colors"
+            className="w-full text-left bg-red-50 p-2 rounded-md 
+              hover:bg-red-100 transition-colors
+              border border-red-200"
           >
             <div className="font-medium text-red-800">View Missing Requirements</div>
           </button>
         </div>
       )}
-
-      
     </div>
-
-    
   );
 };
+
+// Add Body Paragraph Button with vertical connecting lines
+const AddBodyParagraphButton = ({ onClick }) => (
+  <div className="relative">
+    <div className="flex items-center py-2">
+      <div className="relative w-12 flex-shrink-0">
+        {/* Vertical line above */}
+        <div className="absolute left-[1.375rem] -top-4 bottom-1/2 w-0.5 bg-[#F3E8FF]" />
+        
+        {/* Circle */}
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
+          <div className="w-6 h-6 rounded-full bg-[#F3E8FF] flex items-center justify-center">
+            <div className="w-3 h-3 rounded-full bg-white opacity-30" />
+          </div>
+        </div>
+        
+        {/* Vertical line below */}
+        <div className="absolute left-[1.375rem] top-1/2 h-8 w-0.5 bg-[#F3E8FF]" />
+      </div>
+
+      <button
+        onClick={onClick}
+        className="flex-grow bg-purple-600 rounded-lg py-3 px-4 
+          text-white font-medium
+          transform transition-all duration-200
+          hover:bg-purple-700
+          active:scale-[0.99]
+          focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+      >
+        <div className="flex items-center justify-center space-x-2">
+          <span>Add Body Paragraph</span>
+          <PlusIcon className="h-5 w-5" />
+        </div>
+      </button>
+    </div>
+  </div>
+);
 
 export default function EssayBlock() {
   const { sectionId } = useParams();
