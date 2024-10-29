@@ -141,7 +141,7 @@ const WritingAssistant = ({ isOpen, onClose, sectionType, essayInfo, currentCont
       <div className="flex flex-col h-full">
         <div className="flex justify-between items-center p-4 border-b">
           <h2 className="text-lg font-semibold">Writing Assistant</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button onClick={onClose} className="w-auto text-white bg-red-500 hover:bg-black">
             <XIcon className="h-6 w-6" />
           </button>
         </div>

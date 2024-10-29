@@ -11,7 +11,13 @@ const {
   deletePost,
   likePost,
   unlikePost,
+  getUserPosts
 } = require('../controllers/postController');
+
+// @route   GET /api/posts/user
+// @desc    Get all posts by a specific user
+// @access  Private
+router.get('/user', protect, getUserPosts);
 
 // @route   POST /api/posts
 // @desc    Create a new post

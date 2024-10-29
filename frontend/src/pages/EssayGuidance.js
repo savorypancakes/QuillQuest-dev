@@ -81,10 +81,9 @@ export default function EssayGuidance() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-purple-600 p-4">
+    <div className="flex-col space-y-5 min-h-screen flex items-center justify-center bg-purple-600 p-4">
       {/* Add this button */}
       <Navbar/>
-      
       {/* Rest of your existing content */}
       <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6 space-y-6">
         <div className="space-y-2">

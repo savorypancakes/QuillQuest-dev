@@ -1,7 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import '../assets/css/pages/Login.css';
 import logo from '../assets/images/logo-2.png';
 import { AuthContext } from '../context/AuthContext'; // Import AuthContext
 
@@ -64,7 +63,7 @@ const Login = () => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const validationErrors = validate();
     setErrors(validationErrors);
 
@@ -75,15 +74,13 @@ const Login = () => {
     setIsSubmitting(true);
     setServerError('');
     setSuccessMessage('');
-    
+
     try {
-      
-      
       const response = await api.post('/auth/login', {
-        "email": formData.email,
-        "password": formData.password,
+        email: formData.email,
+        password: formData.password,
       });
-      
+
       // Assuming backend returns token and user info
       const { token, user } = response.data;
 
@@ -92,12 +89,11 @@ const Login = () => {
 
       // Update auth state using context
       login(token, user);
-      
-      // Optionally, store user info in context or state
+
       // Redirect to home page
       setSuccessMessage('Login successful! Redirecting...');
       navigate('/home');
-      
+
     } catch (error) {
       if (error.response && error.response.data) {
         setServerError(error.response.data.message || 'Login failed');
@@ -106,62 +102,77 @@ const Login = () => {
       }
     } finally {
       setIsSubmitting(false);
-      
     }
   };
 
   return (
-    <div className="login-container">
-      <div className="login-box">
-        <div className="logo-section">
-          <img src={logo} alt="Logo" className="logo-image2" />
-          <div className="logo">QuillQuest</div>
+    <div className="bg-[#9500F0] min-h-screen flex justify-center items-center">
+      <div className="bg-white flex flex-col md:flex-row w-full max-w-4xl shadow-lg rounded-lg overflow-hidden">
+        <div className="flex-1 flex flex-col justify-center items-center p-6 md:p-10 bg-gray-100">
+          <img src={logo} alt="Logo" className="w-32 h-32 md:w-48 md:h-48 object-contain" />
+          <div className="font-[Mclaren] text-4xl md:text-5xl text-[#9500F0] mt-5 text-center">QuillQuest</div>
         </div>
-        <div className="form-section">
-          <h2 className="welcome-text">Welcome back!</h2>
-          <p className="sub-text">It's good to see you again</p>
-          <form onSubmit={handleSubmit} noValidate>
+        <div className="flex-1 flex flex-col justify-center items-center p-6 md:p-10">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-2">Welcome back!</h2>
+          <p className="text-md text-center mb-4">It's good to see you again</p>
+          <form onSubmit={handleSubmit} className="w-full max-w-md" noValidate>
             {/* Email Field */}
-            <div className="login-form">
-              <label className="login-label">Email</label>
+            <div className="flex flex-col mb-4">
+              <label htmlFor="email" className="text-lg mb-2">Email</label>
               <input
                 type="email"
                 id="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className={errors.email ? 'input-error' : ''}
+                className={`w-full px-4 py-2 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded focus:outline-none focus:ring-2 focus:ring-purple-500`}
                 required
               />
               {errors.email && (
-                <span className="error-text">{errors.email}</span>
+                <span className="text-red-500 text-sm mt-1">{errors.email}</span>
               )}
             </div>
 
             {/* Password Field */}
-            <div className="login-form">
-              <label className="login-label">Password</label>
+            <div className="flex flex-col mb-2">
+              <label htmlFor="password" className="text-lg mb-2">Password</label>
               <input
                 type="password"
                 id="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className={errors.password ? 'input-error' : ''}
+                className={`w-full px-4 py-2 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded focus:outline-none focus:ring-2 focus:ring-purple-500`}
                 required
               />
               {errors.password && (
-                <span className="error-text">{errors.password}</span>
+                <span className="text-red-500 text-sm mt-1">{errors.password}</span>
               )}
             </div>
 
+            {/* Forgot Password Link */}
+            <div className="w-full text-right mb-4">
+              <Link to="/reset-password" className="text-purple-700 hover:underline text-sm">Forgot password?</Link>
+            </div>
+
             {/* Submit Button */}
-            <button type="submit" disabled={isSubmitting}>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-[#9500F0] text-white py-3 rounded hover:bg-purple-800 transition disabled:opacity-50"
+            >
               {isSubmitting ? 'Logging in...' : 'Login'}
             </button>
+
+            {/* Display Server Error */}
+            {serverError && (
+              <div className="text-red-500 text-center mt-4">
+                {serverError}
+              </div>
+            )}
           </form>
-          <p className="signup-link">
-            Don’t have an account? <Link to="/register">Sign up</Link>
+          <p className="text-sm text-gray-700 mt-4">
+            Don’t have an account? <Link to="/register" className="text-purple-700 hover:underline">Sign up</Link>
           </p>
         </div>
       </div>

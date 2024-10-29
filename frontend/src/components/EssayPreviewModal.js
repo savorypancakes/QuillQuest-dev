@@ -49,7 +49,7 @@ const EssayPreviewModal = ({ sections, essayInfo }) => {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-full hover:bg-gray-50"
+        className="flex items-center gap-2 px-4 py-2 rounded-full hover:bg-purple-500"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -71,7 +71,7 @@ const EssayPreviewModal = ({ sections, essayInfo }) => {
             </button>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-white bg-red-500 hover:bg-black"
             >
               ✕
             </button>
@@ -79,16 +79,16 @@ const EssayPreviewModal = ({ sections, essayInfo }) => {
         </div>
 
         {/* Tabs */}
-        <div className="border-b px-4">
+        <div className="flex flex-col items-center py-2 border-b">
           <div className="flex gap-4">
             {['preview', 'outline'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 border-b-2 transition-colors ${
+                className={`w-auto px-4 py-2 border-b-2 transition-colors ${
                   activeTab === tab
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    ? 'bg-gray-500 cursor-default border-blue-500 text-white-600'
+                    : 'border-transparent text-white-500 hover:bg-purple-500'
                 }`}
               >
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
