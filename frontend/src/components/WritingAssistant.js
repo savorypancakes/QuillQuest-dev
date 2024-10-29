@@ -19,6 +19,7 @@ const WritingAssistant = ({ isOpen, onClose, sectionType, essayInfo, currentCont
         temperature: 0.5,
         maxTokens: 1024,
         topP: 1,
+        baseURL: 'https://cors-anywhere.herokuapp.com/https://api.groq.com/openai/v1'
       });
       setLLM(newLLM);
     }
