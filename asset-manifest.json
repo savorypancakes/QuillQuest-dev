@@ -1,17 +1,17 @@
 {
   "files": {
-    "main.css": "/QuillQuest-dev/static/css/main.b8668d6f.css",
-    "main.js": "/QuillQuest-dev/static/js/main.44e0beea.js",
-    "static/js/453.d855a71b.chunk.js": "/QuillQuest-dev/static/js/453.d855a71b.chunk.js",
-    "static/media/logo-2.png": "/QuillQuest-dev/static/media/logo-2.40911710888561ee76d2.png",
-    "static/media/logo-3.png": "/QuillQuest-dev/static/media/logo-3.2043fc651329c6d712ab.png",
-    "index.html": "/QuillQuest-dev/index.html",
-    "main.b8668d6f.css.map": "/QuillQuest-dev/static/css/main.b8668d6f.css.map",
-    "main.44e0beea.js.map": "/QuillQuest-dev/static/js/main.44e0beea.js.map",
-    "453.d855a71b.chunk.js.map": "/QuillQuest-dev/static/js/453.d855a71b.chunk.js.map"
+    "main.css": "/login/static/css/main.b8668d6f.css",
+    "main.js": "/login/static/js/main.cf95ace4.js",
+    "static/js/453.d855a71b.chunk.js": "/login/static/js/453.d855a71b.chunk.js",
+    "static/media/logo-2.png": "/login/static/media/logo-2.40911710888561ee76d2.png",
+    "static/media/logo-3.png": "/login/static/media/logo-3.2043fc651329c6d712ab.png",
+    "index.html": "/login/index.html",
+    "main.b8668d6f.css.map": "/login/static/css/main.b8668d6f.css.map",
+    "main.cf95ace4.js.map": "/login/static/js/main.cf95ace4.js.map",
+    "453.d855a71b.chunk.js.map": "/login/static/js/453.d855a71b.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.b8668d6f.css",
-    "static/js/main.44e0beea.js"
+    "static/js/main.cf95ace4.js"
   ]
 }
