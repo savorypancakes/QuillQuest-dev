@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDownIcon } from '@heroicons/react/solid';
 import { useNavigate } from 'react-router-dom';
+import { HomeIcon } from '@heroicons/react/solid';
 import api from '../services/api';
 
 export default function EssayGuidance() {
@@ -41,6 +42,21 @@ export default function EssayGuidance() {
     fetchPrompts();
   }, []);
   
+  useEffect(() => {
+    // Clear all essay-related data when component mounts
+    localStorage.removeItem('essaySections');
+    localStorage.removeItem('essayInfo');
+    
+    // Clear any other essay-related data
+    for (let key of Object.keys(localStorage)) {
+      if (key.startsWith('essayContent_') || 
+          key.startsWith('sectionRequirements_') ||
+          key.startsWith('essay_') ||
+          key.includes('section')) {
+        localStorage.removeItem(key);
+      }
+    }
+  }, []);
 
   const handleTitleChange = (e) => {
     setTitle(e.target.value);
@@ -65,6 +81,17 @@ export default function EssayGuidance() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-purple-600 p-4">
+      {/* Add this button */}
+      <button
+        onClick={() => navigate('/home')}
+        className="absolute top-4 left-4 bg-white text-purple-600 px-4 py-2 rounded-full 
+          hover:bg-purple-50 transition-colors flex items-center space-x-2"
+      >
+        <HomeIcon className="h-5 w-5" />
+        <span>Back to Home</span>
+      </button>
+      
+      {/* Rest of your existing content */}
       <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6 space-y-6">
         <div className="space-y-2">
           <label htmlFor="title" className="block text-sm font-medium text-gray-700">

@@ -24,49 +24,90 @@ const ProgressCircle = ({ percentage }) => (
   </div>
 );
 
-const EssaySection = ({ title, percentage, isLast, onClick, onDelete, showDelete }) => (
-  <div className="relative">
-    <div className="flex items-center mb-4">
-      <button
-        onClick={onClick}
-        className="flex-grow flex items-center justify-between bg-purple-600 text-white rounded-full py-2 px-4 z-10 relative hover:bg-purple-700 transition-colors"
-      >
-        <span>{title}</span>
-        <ProgressCircle percentage={percentage} />
-      </button>
-      {showDelete && (
+const EssaySection = ({ title, percentage, isLast, onClick, onDelete, showDelete }) => {
+  const isConclusion = title.toLowerCase().includes('conclusion');
+
+  return (
+    <div className="relative">
+      <div className="flex items-center mb-4">
         <button
-          onClick={onDelete}
-          className="ml-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600"
-          aria-label="Delete paragraph"
+          onClick={onClick}
+          className="flex-grow flex items-center justify-between bg-purple-600 text-white 
+            rounded-full py-2 px-4 z-10 relative hover:bg-purple-700 transition-colors"
         >
-          <XIcon className="h-5 w-5" />
+          <span>{title}</span>
+          <ProgressCircle percentage={percentage} />
         </button>
+        {showDelete && (
+          <button
+            onClick={onDelete}
+            className="ml-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600"
+            aria-label="Delete paragraph"
+          >
+            <XIcon className="h-5 w-5" />
+          </button>
+        )}
+      </div>
+      {/* Only show the vertical line if it's not the conclusion */}
+      {!isConclusion && (
+        <div className="absolute left-1/2 top-full w-0.5 h-4 bg-purple-600 -translate-x-1/2"></div>
       )}
     </div>
-    {!isLast && (
-      <div className="absolute left-1/2 top-full w-0.5 h-4 bg-purple-600 -translate-x-1/2"></div>
-    )}
-  </div>
-);
+  );
+};
 
 export default function EssayBuilder() {
   const navigate = useNavigate();
   const location = useLocation();
 
   const [sections, setSections] = useState(() => {
-    // First check if we have sections from location state (coming from EssayBlock)
+    // First check if we have sections in location state
     if (location.state?.allSections) {
-      return location.state.allSections;
+      const stateSections = location.state.allSections;
+      // Update percentages based on content
+      return stateSections.map(section => {
+        const content = localStorage.getItem(`essayContent_${section.id}`);
+        const percentage = content?.trim() ? (section.percentage || 50) : 0;
+        return {
+          ...section,
+          percentage
+        };
+      });
     }
     
     // Then check localStorage
     const savedSections = localStorage.getItem('essaySections');
     if (savedSections) {
-      return JSON.parse(savedSections);
+      // When loading from localStorage, we need to also check content existence
+      const parsedSections = JSON.parse(savedSections);
+      return parsedSections.map(section => {
+        const content = localStorage.getItem(`essayContent_${section.id}`);
+        const percentage = content?.trim() ? (section.percentage || 50) : 0;
+        return {
+          ...section,
+          percentage
+        };
+      });
     }
-  
-    // Finally use default if nothing exists
+    
+    // If we're starting fresh (no state and no localStorage)
+    if (!location.state?.essayInfo) {
+      // Clear everything for a fresh start
+      localStorage.removeItem('essaySections');
+      localStorage.removeItem('essayInfo');
+      
+      // Clear any other essay-related data
+      for (let key of Object.keys(localStorage)) {
+        if (key.startsWith('essayContent_') || 
+            key.startsWith('sectionRequirements_') ||
+            key.startsWith('essay_') ||
+            key.includes('section')) {
+          localStorage.removeItem(key);
+        }
+      }
+    }
+
+    // Return default sections for a new essay
     return [
       { id: 'intro', title: 'Introduction', percentage: 0 },
       { id: 'conclusion', title: 'Conclusion', percentage: 0 },
@@ -74,69 +115,101 @@ export default function EssayBuilder() {
   });
 
   const [essayInfo, setEssayInfo] = useState(() => {
+    // First check location state
+    if (location.state?.essayInfo) {
+      return location.state.essayInfo;
+    }
+    
+    // Then check localStorage
     const savedEssayInfo = localStorage.getItem('essayInfo');
     if (savedEssayInfo) {
       return JSON.parse(savedEssayInfo);
     }
-    return location.state?.essayInfo || { prompt: '', title: '', postType: '' };
+    
+    // Default empty state
+    return { prompt: '', title: '', postType: '' };
   });
 
+  // Save sections to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('essaySections', JSON.stringify(sections));
   }, [sections]);
 
+  // Save essay info to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('essayInfo', JSON.stringify(essayInfo));
   }, [essayInfo]);
 
+  // Keep sections updated with latest content status
   useEffect(() => {
-    // Check if there's location state with sections
-    if (location.state?.allSections) {
-      setSections(location.state.allSections);
-    }
-    
-    if (location.state?.essayInfo) {
-      setEssayInfo(location.state.essayInfo);
-    }
-    
-    // Clear location state after using it
-    if (location.state) {
-      window.history.replaceState({}, document.title);
-    }
-  }, [location.state]);
-
-  useEffect(() => {
-    if (sections.length > 0) {
-      localStorage.setItem('essaySections', JSON.stringify(sections));
-      
-      // Update each section's content and requirements
-      sections.forEach(section => {
-        const sectionContent = localStorage.getItem(`essayContent_${section.id}`);
-        if (sectionContent) {
-          localStorage.setItem(`essayContent_${section.id}`, sectionContent);
-        }
+    const timer = setInterval(() => {
+      setSections(prevSections => {
+        const updatedSections = prevSections.map(section => {
+          const content = localStorage.getItem(`essayContent_${section.id}`);
+          const percentage = content?.trim() ? (section.percentage || 50) : 0;
+          return {
+            ...section,
+            percentage
+          };
+        });
         
-        const requirements = localStorage.getItem(`sectionRequirements_${section.id}`);
-        if (requirements) {
-          localStorage.setItem(`sectionRequirements_${section.id}`, requirements);
+        // Only update state if there are actual changes
+        if (JSON.stringify(updatedSections) !== JSON.stringify(prevSections)) {
+          return updatedSections;
         }
+        return prevSections;
       });
-    }
-  }, [sections]);
+    }, 1000); // Check every second
+
+    return () => clearInterval(timer);
+  }, []);
 
   const addSection = () => {
     const newSection = { 
       id: `body-${Date.now()}`, 
-      title: `Body Paragraph ${sections.length - 1}`, 
+      title: `Body Paragraph ${sections.filter(s => 
+        s.title.toLowerCase().includes('body paragraph')
+      ).length + 1}`, 
       percentage: 0,
-      type: 'body'  // Add type to match EssayBlock structure
+      type: 'body'
     };
-    setSections([...sections.slice(0, -1), newSection, sections[sections.length - 1]]);
+    
+    // Find the conclusion section index
+    const conclusionIndex = sections.findIndex(s => 
+      s.title.toLowerCase().includes('conclusion')
+    );
+    
+    // Insert the new section before the conclusion
+    const updatedSections = [
+      ...sections.slice(0, conclusionIndex),
+      newSection,
+      ...sections.slice(conclusionIndex)
+    ];
+    
+    setSections(updatedSections);
+    localStorage.setItem('essaySections', JSON.stringify(updatedSections));
   };
 
   const deleteSection = (index) => {
-    const newSections = sections.filter((_, i) => i !== index);
+    const sectionToDelete = sections[index];
+    
+    // Remove content and requirements for the deleted section
+    localStorage.removeItem(`essayContent_${sectionToDelete.id}`);
+    localStorage.removeItem(`sectionRequirements_${sectionToDelete.id}`);
+    
+    // Update sections array
+    const newSections = sections.filter((_, i) => i !== index).map((section, i) => {
+      if (section.title.toLowerCase().includes('body paragraph')) {
+        return {
+          ...section,
+          title: `Body Paragraph ${i - 1}` // -1 because Introduction is first
+        };
+      }
+      return section;
+    });
+    
     setSections(newSections);
+    localStorage.setItem('essaySections', JSON.stringify(newSections));
   };
 
   const handleSectionClick = (index) => {
@@ -149,7 +222,7 @@ export default function EssayBuilder() {
       } 
     });
   };
-  
+
   const handleNextClick = () => {
     navigate('/essayreview', {
       state: {
@@ -158,23 +231,18 @@ export default function EssayBuilder() {
       }
     });
   };
-  
 
   const handleCancel = () => {
-    // Reset all progress
+    // Clear ALL section-related localStorage items
+    sections.forEach(section => {
+      localStorage.removeItem(`essayContent_${section.id}`);
+      localStorage.removeItem(`sectionRequirements_${section.id}`);
+    });
+    
+    // Clear essay data
     localStorage.removeItem('essaySections');
     localStorage.removeItem('essayInfo');
     
-    // Clear ALL section-related localStorage items
-    sections.forEach(section => {
-      // Clear content
-      localStorage.removeItem(`essayContent_${section.id}`);
-      // Clear requirements
-      localStorage.removeItem(`sectionRequirements_${section.id}`);
-      // Clear analysis
-      localStorage.removeItem(`sectionAnalysis_${section.id}`);
-    });
-  
     // Clear any other potential essay-related items
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
@@ -187,8 +255,7 @@ export default function EssayBuilder() {
         localStorage.removeItem(key);
       }
     }
-  
-    // Navigate back to EssayGuidance
+    
     navigate('/essayguidance');
   };
 
@@ -204,56 +271,65 @@ export default function EssayBuilder() {
           <p><strong>Post Type:</strong> {essayInfo.postType}</p>
         </div>
 
+        {/* Section list */}
         <div className="space-y-4">
-          <EssaySection 
-            title={sections[0].title} 
-            percentage={sections[0].percentage} 
-            isLast={false}
-            onClick={() => handleSectionClick(0)}
-            showDelete={false}
-          />
-          {sections.slice(1, -1).map((section, index) => (
-            <EssaySection 
-              key={section.id}
-              title={section.title} 
-              percentage={section.percentage} 
-              isLast={false}
-              onClick={() => handleSectionClick(index + 1)}
-              onDelete={() => deleteSection(index + 1)}
-              showDelete={true}
-            />
-          ))}
-          {sections.length < 7 && (
-            <div className="relative">
-              <button
-                onClick={addSection}
-                className="w-full bg-white text-purple-600 border-2 border-purple-600 rounded-full py-2 px-4 font-medium hover:bg-purple-100 transition-colors mb-4 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
-                aria-label="Add new body paragraph"
-              >
-                <PlusIcon className="w-5 h-5 mr-2" />
-                Add Body Paragraph
-              </button>
-              <div className="absolute left-1/2 top-full w-0.5 h-4 bg-purple-600 -translate-x-1/2"></div>
-            </div>
-          )}
-          <EssaySection 
-            title={sections[sections.length - 1].title} 
-            percentage={sections[sections.length - 1].percentage} 
-            isLast={true}
-            onClick={() => handleSectionClick(sections.length - 1)}
-            showDelete={false}
-          />
+          {sections.map((section, index) => {
+            const isBodyParagraph = section.title.toLowerCase().includes('body paragraph');
+            const isIntroduction = section.title.toLowerCase().includes('introduction');
+            const isConclusion = section.title.toLowerCase().includes('conclusion');
+            
+            return (
+              <React.Fragment key={section.id}>
+                <EssaySection 
+                  title={section.title} 
+                  percentage={section.percentage}
+                  onClick={() => handleSectionClick(index)}
+                  onDelete={() => isBodyParagraph ? deleteSection(index) : null}
+                  showDelete={isBodyParagraph}
+                />
+                
+                {/* Add Body Paragraph button after Introduction or last Body Paragraph,
+                    but only if we're not at the conclusion */}
+                {!isConclusion && 
+                 sections.filter(s => s.title.toLowerCase().includes('body paragraph')).length < 5 && 
+                 ((isIntroduction && !sections.some(s => s.title.toLowerCase().includes('body paragraph'))) ||
+                 (isBodyParagraph && sections[index + 1]?.title.toLowerCase().includes('conclusion'))) && (
+                  <div className="relative">
+                    <button
+                      onClick={addSection}
+                      className="w-full bg-white text-purple-600 border-2 border-dashed 
+                        border-purple-600 rounded-full py-2 px-4 font-medium 
+                        hover:bg-purple-100 transition-colors mb-4 flex items-center 
+                        justify-center focus:outline-none focus:ring-2 focus:ring-purple-500 
+                        focus:ring-opacity-50"
+                    >
+                      <PlusIcon className="w-5 h-5 mr-2" />
+                      Add Body Paragraph
+                    </button>
+                    <div className="absolute left-1/2 top-full w-0.5 h-4 bg-purple-600 -translate-x-1/2" />
+                  </div>
+                )}
+              </React.Fragment>
+            );
+          })}
         </div>
+
+        {/* Footer buttons */}
         <div className="flex justify-between mt-6">
           <button
             onClick={handleCancel}
-            className="bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
+            className="bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600 
+              transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 
+              focus:ring-opacity-50"
           >
             Cancel
           </button>
           <button 
             onClick={handleNextClick}
-            className="bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50">
+            className="bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700 
+              transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 
+              focus:ring-opacity-50"
+          >
             Next
           </button>
         </div>
