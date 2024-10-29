@@ -15,7 +15,7 @@ const WritingAssistant = ({ isOpen, onClose, sectionType, essayInfo, currentCont
     if (apiKey) {
       const newLLM = new ChatGroq({
         apiKey: apiKey,
-        model: "mixtral-8x7b-32768",
+        model: "llama3-70b-8192",
         temperature: 0.5,
         maxTokens: 1024,
         topP: 1,
