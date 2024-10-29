@@ -96,7 +96,7 @@ const PostDetail = () => {
 
       <h2 className="post-title">{post.title}</h2>
 
-      <div className="post-content">
+      <div className="post-content text-left">
         <p>{post.content}</p>
       </div>
 
