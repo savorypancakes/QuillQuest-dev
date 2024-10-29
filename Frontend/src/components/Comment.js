@@ -14,6 +14,7 @@ import { formatDistanceToNow } from 'date-fns';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteModal from '../components/DeleteModal';
+import { useLocation } from 'react-router-dom';
 
 const Comment = ({ postId, onCommentsUpdate, onReplyUpdate }) => {
   const { auth } = useContext(AuthContext); // Access auth context for user and token
@@ -29,6 +30,8 @@ const Comment = ({ postId, onCommentsUpdate, onReplyUpdate }) => {
   const [editContent, setEditContent] = useState('');
   const [originalContent, setOriginalContent] = useState('');
   const [hasChanges, setHasChanges] = useState(false); // State to track if there are changes
+  const location = useLocation();
+
 
   // Fetch comments for the specific post
   useEffect(() => {
@@ -197,7 +200,18 @@ const Comment = ({ postId, onCommentsUpdate, onReplyUpdate }) => {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const focusCommentId = params.get('focusComment');
 
+    if (focusCommentId) {
+      setShowReplies((prev) => ({
+        ...prev,
+        [focusCommentId]: true,
+      }));
+    }
+  }, [location.search]);
+  
   const toggleReplies = (commentId) => {
     setShowReplies((prev) => ({
       ...prev,

@@ -41,9 +41,11 @@ exports.createComment = async (req, res, next) => {
 
       // Create a notification for the post owner
       if (post.userId.toString() !== req.user._id.toString()) {
+        const truncatedContent = content.length > 20 ? `${content.substring(0, 17)}...` : content;
+        const truncatedPostTitle = post.title.length > 20 ? `${post.title.substring(0, 17)}...` : post.title;
         const notification = new Notification({
           userId: post.userId,
-          message: `${req.user.username} commented on your post.`,
+          message: `${req.user.username} commented "${truncatedContent}" on your post "${truncatedPostTitle}".`,
           type: 'comment',
           postId: post._id
         });

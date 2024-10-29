@@ -34,11 +34,16 @@ exports.createReply = async (req, res, next) => {
 
     // Create a notification for the comment's author (if the replier is not the original author)
     if (comment.userId.toString() !== userId.toString()) {
+      const truncatedReplyContent = content.length > 20 ? `${content.substring(0, 17)}...` : content;
+      const truncatedCommentContent = comment.content.length > 20 ? `${comment.content.substring(0, 17)}...` : comment.content;
+      // Use the `post` field from the comment to get the post ID
+      const postId = comment.post;
       const notification = new Notification({
         userId: comment.userId,
-        message: `${req.user.username} replied to your comment.`,
+        message: `${req.user.username} replied "${truncatedReplyContent}" on your comment "${truncatedCommentContent}".`,
         type: 'reply',
-        postId: comment.postId,
+        postId: postId,
+        commentId: comment._id,
       });
       await notification.save();
     }

@@ -9,6 +9,7 @@ import logo from '../assets/images/logo-3.png';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import CloseIcon from '@mui/icons-material/Close';
+import ArrowOutwardIcon from '@mui/icons-material/ArrowOutward';
 
 const Navbar = () => {
   const { auth, logout } = useContext(AuthContext);
@@ -159,7 +160,7 @@ const Navbar = () => {
             )}
           </button>
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg overflow-hidden z-50 top-16">
+            <div className="md:50 absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg overflow-hidden z-50 top-16">
               <div className="p-4 border-b">
                 <h4 className="text-lg font-semibold">Notifications</h4>
               </div>
@@ -171,13 +172,18 @@ const Navbar = () => {
                       className={`p-4 cursor-pointer ${notification.isRead ? 'bg-gray-100' : 'bg-white font-bold hover:bg-gray-200'}`}
                     >
                       <div className="flex justify-between items-center">
-                        <span onClick={() => handleMarkAsRead(notification._id)}>{notification.message}</span>
-                        <button
-                          className="color-[black] w-auto h-auto bg-transparent hover:bg-[red] ml-2"
-                          onClick={() => deleteNotification(notification._id)}
-                        >
-                          <CloseIcon fontSize='15' />
-                        </button>
+                        <span className="text-sm text-left self-start" onClick={() => handleMarkAsRead(notification._id)}>{notification.message}</span>
+                        <div className="flex flex-col items-center space-y-2">
+                          <Link to={`/posts/${notification.postId}?focusComment=${notification.commentId}`} className="bg-blue-500 text-white p-1 rounded-md hover:bg-blue-700">
+                            <ArrowOutwardIcon fontSize='small'/>
+                          </Link>
+                          <button
+                            className="bg-red-500 color-black hover:bg-[black] p-0"
+                            onClick={() => deleteNotification(notification._id)}
+                          >
+                            <CloseIcon fontSize='small' />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))
