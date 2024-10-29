@@ -31,10 +31,10 @@ function App() {
 
           {/* Protected routes for authenticated users only */}
 
-          <Route path="/essayguidance" element={<EssayGuidance />} />
-          <Route path="/essaybuilder" element={<EssayBuilder />} />
-          <Route path="/essayblock/:sectionId" element={<EssayBlock />} />
-          <Route path="/essayreview" element={<EssayReview />} />
+          <Route path="/essayguidance" element={<ProtectedRoute><EssayGuidance /></ProtectedRoute>} />
+          <Route path="/essaybuilder" element={<ProtectedRoute><EssayBuilder /></ProtectedRoute>} />
+          <Route path="/essayblock/:sectionId" element={<ProtectedRoute><EssayBlock /></ProtectedRoute>} />
+          <Route path="/essayreview" element={<ProtectedRoute><EssayReview /></ProtectedRoute>} />
           <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path='/profile' element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path='/createpost' element={<ProtectedRoute><CreatePost /></ProtectedRoute>} />

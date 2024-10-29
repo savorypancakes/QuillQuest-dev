@@ -80,16 +80,17 @@ export default function EssayGuidance() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-purple-600 p-4">
+    <div className="flex-col space-y-5 min-h-screen flex items-center justify-center bg-purple-600 p-4">
       {/* Add this button */}
-      <button
+        <button
         onClick={() => navigate('/home')}
-        className="absolute top-4 left-4 bg-white text-purple-600 px-4 py-2 rounded-full 
-          hover:bg-purple-50 transition-colors flex items-center space-x-2"
+        className="bg-white text-purple-600 px-4 py-2 rounded-full 
+          hover:bg-purple-50 transition-colors flex items-center space-x-2 w-auto"
       >
         <HomeIcon className="h-5 w-5" />
         <span>Back to Home</span>
       </button>
+      
       
       {/* Rest of your existing content */}
       <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6 space-y-6">

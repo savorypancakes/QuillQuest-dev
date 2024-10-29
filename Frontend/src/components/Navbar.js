@@ -136,13 +136,13 @@ const Navbar = () => {
 
       <div className="flex items-center justify-end w-auto space-x-2">
         <button className="lg:hidden bg-[#D9D9D9] mt-0 text-black px-3 py-2 rounded-md hover:text-white hover:bg-[black]" onClick={toggleDropdown}>
-          <Link to="/createpost" className=''> Create  <EditIcon /></Link>
+          <Link to="/essayguidance" className=''> Create  <EditIcon /></Link>
         </button>
 
 
         <div className="hidden lg:flex items-center ">
           <Link to="/home" className='bg-[#D9D9D9] pl-3 pr-2 py-2 hover:bg-[#333] hover:text-[white] rounded-l-xl'> Home <HomeIcon /></Link>
-          <Link to="/createpost" className='bg-[#D9D9D9] pl-2 pr-3 py-2 hover:bg-[#333] hover:text-[white] rounded-r-xl'> Create  <EditIcon /></Link>
+          <Link to="/essayguidance" className='bg-[#D9D9D9] pl-2 pr-3 py-2 hover:bg-[#333] hover:text-[white] rounded-r-xl'> Create  <EditIcon /></Link>
         </div>
 
 
