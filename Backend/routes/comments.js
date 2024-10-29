@@ -23,11 +23,11 @@ router.get('/posts/:postId/comments', getCommentsByPost);
 // @route   PUT /api/comments/:id
 // @desc    Update a comment
 // @access  Private
-router.put('/comments/:postId', protect, updateComment);
+router.put('/:commentId', protect, updateComment);
 
 // @route   DELETE /api/comments/:id
 // @desc    Delete a comment
 // @access  Private
-router.delete('/comments/:postId', protect, deleteComment);
+router.delete('/:commentId', protect, deleteComment);
 
 module.exports = router;

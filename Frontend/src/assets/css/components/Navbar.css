@@ -34,30 +34,34 @@
   align-items: center;
 }
 
-.nav-links {
-  display: flex;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  
+.home {
+  background-color: #D9D9D9;
+  padding-left: 0.75rem;
+  padding-right: 0.5rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-start-start-radius: 0.5rem; /* 8px */
+  border-end-start-radius: 0.5rem; /* 8px */
 }
 
-.nav-links li {
-  display: flex;
-  align-items: center;
-  background-color: #d6d6d6;
-  border-radius: 0px;
-  padding: 5px 10px;
-  transition: background-color linear, color linear;
+.home:hover{
+  background-color: #333;
+  color: white;
 }
 
-.nav-links li a {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  color: #000;
-  font-weight: 500;
+.create {
+  background-color: #D9D9D9;
+  padding-left: 0.5rem;
+  padding-right: 0.75rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-start-end-radius: 0.5rem; /* 8px */
+  border-end-end-radius: 0.5rem; /* 8px */
+}
+
+.create:hover{
+  background-color: #333;
+  color: white;
 }
 
 .nav-links li:hover {
@@ -86,8 +90,7 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  margin-right: 10px;
-  margin-left: 30px;
+  margin: 0.5rem;
   height: 40px;
   width: 40px;
 }
@@ -105,7 +108,7 @@
   overflow: hidden;
   font-size: 20px; /* ขนาดของตัวอักษร */
   box-sizing: border-box; /* ทำให้ padding ไม่ส่งผลต่อขนาด */
-  margin-left: 30px;
+  margin: 0.5rem;
 }
 
 .navbar-profile {

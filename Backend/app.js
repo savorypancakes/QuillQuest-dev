@@ -28,6 +28,9 @@ const userRoutes = require('./routes/users');
 const postRoutes = require('./routes/posts');
 const commentRoutes = require('./routes/comments');
 const promptRoutes = require('./routes/prompts');
+const replyRoutes = require('./routes/replies');
+const notificationRoutes = require('./routes/notifications');
+const resetPasswordRoute = require('./routes/resetPassword');
 
 // Debug middleware for prompts route
 app.use('/api/prompts', (req, res, next) => {
@@ -41,11 +44,13 @@ app.use('/api/prompts', (req, res, next) => {
 });
 
 // Use Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes, resetPasswordRoute);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/prompts', promptRoutes);
+app.use('/api', replyRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Add a test route
 app.get('/api/test', (req, res) => {

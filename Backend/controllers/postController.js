@@ -5,6 +5,19 @@ const Tag = require('../models/Tag'); // If using a separate Tag model
 const User = require('../models/User');
 const { io } = require('../server'); // To emit events
 
+// @desc    Get all posts by a specific user
+// @route   GET /api/posts/user
+// @access  Private
+exports.getUserPosts = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const posts = await Post.find({ userId });
+    res.json(posts);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to get user posts' });
+  }
+};
+
 // @desc    Create a new post
 // @route   POST /api/posts
 // @access  Private
@@ -44,6 +57,12 @@ exports.getPosts = async (req, res, next) => {
     const posts = await Post.find()
       .populate('userId', 'username')
       .populate('prompt')
+      .populate({
+        path: 'comments',
+        populate: {
+          path: 'replies',
+        },
+      })
       .sort({ createdAt: -1 });
     res.json(posts);
   } catch (error) {
@@ -58,7 +77,13 @@ exports.getPostById = async (req, res, next) => {
   try {
     const post = await Post.findById(req.params.id)
       .populate('userId', 'username')
-      .populate('prompt');
+      .populate('prompt')
+      .populate({
+        path: 'comments',
+        populate: {
+        path: 'replies',
+        },
+      });
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
@@ -106,13 +131,17 @@ exports.deletePost = async (req, res, next) => {
     }
 
     // Check if the user is the author
-    if (post.author.toString() !== req.user._id.toString()) {
+    if (post.userId.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: 'Not authorized to delete this post' });
     }
 
-    await post.remove();
+    await post.deleteOne(); // Use deleteOne instead of remove
 
-    res.json({ message: 'Post removed' });
+    // Emit a socket event to notify other users about the post deletion
+    const io = req.app.get('io');
+    io.emit('postDeleted', { postId: req.params.id });
+
+    res.json({ message: 'Post successfully deleted', postId: req.params.id });
   } catch (error) {
     next(error);
   }

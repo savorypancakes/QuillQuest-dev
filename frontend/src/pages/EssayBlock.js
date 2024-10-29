@@ -1017,7 +1017,7 @@ const renderErrorPanel = () => {
               Score: {score}
             </div>
             <button 
-              className="bg-purple-600 text-white px-4 py-2 rounded-full flex items-center"
+              className="bg-purple-600 text-white px-4 py-2 rounded-full flex items-center hover:bg-purple-500"
               onClick={toggleAssistant}
             >
               <ChatAlt2Icon className="h-5 w-5 mr-2" />

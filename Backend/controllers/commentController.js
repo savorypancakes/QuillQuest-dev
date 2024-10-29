@@ -2,10 +2,10 @@
 
 const Comment = require('../models/Comment');
 const Post = require('../models/Post');
-
+const Notification = require('../models/Notification');
 
 // @desc    Create a new comment
-// @route   POST /api/comments
+// @route   POST /api/posts/:postId/comments
 // @access  Private
 exports.createComment = async (req, res, next) => {
   const { content, parentCommentId } = req.body;
@@ -26,15 +26,30 @@ exports.createComment = async (req, res, next) => {
 
     const savedComment = await newComment.save();
 
-    // Add comment to post's replies
-    post.replies.push(savedComment._id);
-    await post.save();
+    if (parentCommentId) {
+      // Append the reply to the parent comment's replies array
+      const parentComment = await Comment.findById(parentCommentId);
+      if (!parentComment) {
+        return res.status(404).json({ message: 'Parent comment not found' });
+      }
+      parentComment.replies.push(savedComment._id);
+      await parentComment.save();
+    } else {
+      // Add comment to post's comments array
+      post.comments.push(savedComment._id);
+      await post.save();
 
-    
-
-    // Emit event to notify clients about the new comment
-    const io = req.app.get('io');
-    io.emit('newComment', savedComment);
+      // Create a notification for the post owner
+      if (post.userId.toString() !== req.user._id.toString()) {
+        const notification = new Notification({
+          userId: post.userId,
+          message: `${req.user.username} commented on your post.`,
+          type: 'comment',
+          postId: post._id
+        });
+        await notification.save();
+      }
+    }
 
     res.status(201).json(savedComment);
   } catch (error) {
@@ -43,19 +58,21 @@ exports.createComment = async (req, res, next) => {
 };
 
 // @desc    Get all comments for a post
-// @route   GET /api/comments/post/:postId
+// @route   GET /api/posts/:postId/comments
 // @access  Public
 exports.getCommentsByPost = async (req, res, next) => {
   try {
     const comments = await Comment.find({ post: req.params.postId })
-      .populate('user', 'username')
-      .populate('parentComment')
+      .populate('userId', 'username')
+      .populate('replies')
       .sort({ createdAt: 1 }); // Oldest first
+
     res.json(comments);
   } catch (error) {
     next(error);
   }
 };
+
 
 // @desc    Update a comment
 // @route   PUT /api/comments/:id
@@ -63,13 +80,13 @@ exports.getCommentsByPost = async (req, res, next) => {
 exports.updateComment = async (req, res, next) => {
   const { content } = req.body;
   try {
-    let comment = await Comment.findById(req.params.id);
+    let comment = await Comment.findById(req.params.commentId);
     if (!comment) {
       return res.status(404).json({ message: 'Comment not found' });
     }
 
     // Check if the user is the author
-    if (comment.author.toString() !== req.user._id.toString()) {
+    if (comment.userId.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: 'Not authorized to update this comment' });
     }
 
@@ -88,28 +105,69 @@ exports.updateComment = async (req, res, next) => {
 // @access  Private
 exports.deleteComment = async (req, res, next) => {
   try {
-    let comment = await Comment.findById(req.params.id);
+    const comment = await Comment.findById(req.params.commentId);
     if (!comment) {
       return res.status(404).json({ message: 'Comment not found' });
     }
 
     // Check if the user is the author
-    if (comment.author.toString() !== req.user._id.toString()) {
+    if (comment.userId.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: 'Not authorized to delete this comment' });
     }
 
-    await comment.remove();
+    await comment.deleteOne();
 
-    // Remove comment from post's replies
-    const post = await Post.findById(comment.post);
-    if (post) {
-      post.replies = post.replies.filter(
-        (replyId) => replyId.toString() !== req.params.id
-      );
-      await post.save();
+    // Remove the comment ID from the associated post's comments array
+    await Post.updateOne(
+      { _id: comment.postId },
+      { $pull: { comments: comment._id } }
+    );
+
+    res.json({ message: 'Comment successfully deleted', commentId: req.params.commentId });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Like a comment
+// @route   PUT /api/comments/:id/like
+// @access  Private
+exports.likeComment = async (req, res, next) => {
+  try {
+    let comment = await Comment.findById(req.params.id);
+    if (!comment) {
+      return res.status(404).json({ message: 'Comment not found' });
     }
 
-    res.json({ message: 'Comment removed' });
+    if (!comment.likes.includes(req.user._id)) {
+      comment.likes.push(req.user._id);
+      await comment.save();
+    }
+
+    res.json({ likes: comment.likes });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Unlike a comment
+// @route   PUT /api/comments/:id/unlike
+// @access  Private
+exports.unlikeComment = async (req, res, next) => {
+  try {
+    let comment = await Comment.findById(req.params.id);
+    if (!comment) {
+      return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    if (comment.likes.includes(req.user._id)) {
+      comment.likes = comment.likes.filter(
+        (like) => like.toString() !== req.user._id.toString()
+      );
+      await comment.save();
+    }
+
+    res.json({ likes: comment.likes });
   } catch (error) {
     next(error);
   }

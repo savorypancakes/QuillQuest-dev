@@ -2,7 +2,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { getProfile, updateProfile } = require('../controllers/userController');
+const { getProfile, updateProfile, getUserProfileById } = require('../controllers/userController');
 const { protect } = require('../middlewares/authMiddleware');
 
 // @route   GET /api/users/profile
@@ -14,5 +14,10 @@ router.get('/profile', protect, getProfile);
 // @desc    Update current user's profile
 // @access  Private
 router.put('/profile', protect, updateProfile);
+
+// @route   GET /api/users/:userId/profile
+// @desc    Get a user's profile by ID
+// @access  Private
+router.get('/:userId/profile', protect, getUserProfileById);
 
 module.exports = router;
