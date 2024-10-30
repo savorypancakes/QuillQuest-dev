@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: quillquest
+    env: node
+    buildCommand: bash ./deploy.sh
+    startCommand: cd Backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: REACT_APP_GROQ_API_KEY
+        sync: false
+      - key: PORT
+        value: 10000
+    healthCheckPath: /api/health
+    autoDeploy: true
