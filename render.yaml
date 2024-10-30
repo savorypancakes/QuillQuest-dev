@@ -2,18 +2,23 @@ services:
   - type: web
     name: quillquest
     env: node
-    buildCommand: bash ./deploy.sh
+    buildCommand: |
+      chmod +x deploy.sh
+      ./deploy.sh
     startCommand: cd Backend && npm start
     envVars:
       - key: NODE_ENV
         value: production
+      - key: FRONTEND_URL
+        value: https://quillquest-8msu.onrender.com
       - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: REACT_APP_GROQ_API_KEY
         sync: false
-      - key: PORT
-        value: 10000
     healthCheckPath: /api/health
-    autoDeploy: true
+    buildFilter:
+      paths:
+        - Frontend/**
+        - Backend/**

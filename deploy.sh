@@ -1,30 +1,44 @@
 #!/bin/bash
 
-echo "🚀 Starting deployment..."
+echo "🚀 Starting deployment process..."
 
-# Install dependencies
-echo "📦 Installing dependencies..."
-npm install
+# Set the correct working directory
+WORK_DIR="/opt/render/project/src"
+echo "Working directory: $WORK_DIR"
+
+# Install root dependencies if package.json exists
+if [ -f "$WORK_DIR/package.json" ]; then
+    echo "📦 Installing root dependencies..."
+    npm install
+fi
 
 # Build frontend
 echo "🏗️ Building frontend..."
-cd Frontend
+cd "$WORK_DIR/Frontend"
 npm install
 npm run build
-cd ..
+cd "$WORK_DIR"
 
-# Ensure backend build directory exists
-echo "📁 Creating build directory..."
-mkdir -p Backend/build
+# Create backend build directory
+echo "📁 Creating backend build directory..."
+mkdir -p "$WORK_DIR/Backend/build"
 
 # Copy frontend build to backend
-echo "📋 Copying frontend build to backend..."
-cp -r Frontend/build/* Backend/build/
+echo "📋 Copying frontend build files..."
+cp -r "$WORK_DIR/Frontend/build/"* "$WORK_DIR/Backend/build/"
 
-# Install production dependencies in backend
+# Install backend dependencies
 echo "📦 Installing backend dependencies..."
-cd Backend
-npm install --production
-cd ..
+cd "$WORK_DIR/Backend"
+npm install
 
-echo "✅ Deployment preparation complete!"
+# Verify build files
+echo "✅ Verifying build files..."
+if [ -f "$WORK_DIR/Backend/build/index.html" ]; then
+    echo "Build files successfully copied!"
+else
+    echo "❌ Error: Build files not found!"
+    exit 1
+fi
+
+echo "🎉 Deployment preparation complete!"
