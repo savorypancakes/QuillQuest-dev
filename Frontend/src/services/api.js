@@ -1,23 +1,35 @@
+// api.js
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+// Add /api to the base URL
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL 
+  ? `${process.env.REACT_APP_API_BASE_URL}/api` 
+  : 'http://localhost:5000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 15000, // Increase timeout to 15 seconds
+  timeout: 15000,
 });
 
-// Add request interceptor
+// Request interceptor with improved logging
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log('Making request to:', `${config.baseURL}${config.url}`);
+    
+    // Log full request details
+    console.log('Making request:', {
+      url: `${config.baseURL}${config.url}`,
+      method: config.method,
+      headers: config.headers,
+      data: config.data
+    });
+    
     return config;
   },
   (error) => {
@@ -26,7 +38,7 @@ api.interceptors.request.use(
   }
 );
 
-// Add response interceptor
+// Response interceptor with better error handling
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -35,10 +47,22 @@ api.interceptors.response.use(
     } else if (!error.response) {
       console.error('Network error:', error.message);
     } else {
-      console.error('Response error:', error.response.status, error.response.data);
+      console.error('Response error:', {
+        status: error.response.status,
+        data: error.response.data,
+        url: error.config.url,
+        method: error.config.method
+      });
     }
     return Promise.reject(error);
   }
 );
+
+// Auth endpoints configuration
+export const authAPI = {
+  login: (credentials) => api.post('/auth/login', credentials),
+  register: (userData) => api.post('/auth/register', userData),
+  logout: () => api.post('/auth/logout'),
+};
 
 export default api;

@@ -1,33 +1,14 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { XIcon } from '@heroicons/react/solid';
-import { ChatGroq } from "@langchain/groq";
 import ReactMarkdown from 'react-markdown';
+import { llmService } from '../utils/llmService';
 
 const WritingAssistant = ({ isOpen, onClose, sectionType, essayInfo, currentContent }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [llm, setLLM] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const chatContainerRef = useRef(null);
   const isInitialMount = useRef(true);
-
-  useEffect(() => {
-    const apiKey = process.env.REACT_APP_GROQ_API_KEY;
-    if (apiKey) {
-      const newLLM = new ChatGroq({
-        apiKey: apiKey,
-        model: "llama3-70b-8192",
-        temperature: 0.5,
-        maxTokens: 1024,
-        topP: 1,
-        baseURL: 'https://api.groq.com/openai/v1',  // Add this
-        defaultHeaders: {                            // Add this
-          'Content-Type': 'application/json',
-          'Origin': 'http://localhost:3000'
-        }
-      });
-      setLLM(newLLM);
-    }
-  }, []);
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -38,7 +19,7 @@ const WritingAssistant = ({ isOpen, onClose, sectionType, essayInfo, currentCont
   const systemMessage = useMemo(() => ({
     role: 'system',
     content: `
-      You are a friendly AI writing assistant. Your goal is to help students think critically and improve their essay writing by asking thoughtful questions. Don't provide direct examples or fully formed arguments. Instead, ask questions that encourage the student to reflect on their ideas, find connections, and develop their own arguments. Be encouraging and tailored to the specific section they’re working on.
+      You are a friendly AI writing assistant. Your goal is to help students think critically and improve their essay writing by asking thoughtful questions. Don't provide direct examples or fully formed arguments. Instead, ask questions that encourage the student to reflect on their ideas, find connections, and develop their own arguments. Be encouraging and tailored to the specific section they're working on.
   
       Use the following formatting guidelines:
       
@@ -92,50 +73,57 @@ const WritingAssistant = ({ isOpen, onClose, sectionType, essayInfo, currentCont
       **Remember:** Your role is to guide students in developing their own thoughts without giving away the answers. Encourage critical thinking, avoid spoon-feeding, and focus on engaging questions and feedback.
     `
   }), []);
-  
 
-  const sendInitialMessage = useCallback(async () => {
+  const sendInitialMessage = async () => {
+    if (!isOpen || !isInitialMount.current) return;
+    
+    setIsLoading(true);
     try {
       const userMessage = {
         role: 'user',
         content: `I'm writing a ${essayInfo?.postType || 'essay'} ${essayInfo?.title ? `titled "${essayInfo.title}"` : ''} ${essayInfo?.prompt ? `based on the prompt: "${essayInfo.prompt}"` : ''}. I'm currently working on the ${sectionType} section. Can you provide some guidance to help me improve this part of my essay?`
       };
 
-      const aiResponse = await llm.invoke([systemMessage, userMessage]);
-
+      const aiResponse = await llmService.invoke([systemMessage, userMessage]);
       setMessages([{ role: 'assistant', content: aiResponse.content }]);
+      isInitialMount.current = false;
     } catch (error) {
       console.error('Error sending initial message:', error);
       setMessages([{ role: 'assistant', content: 'Hello! How can I assist you with your essay today?' }]);
+    } finally {
+      setIsLoading(false);
     }
-  }, [llm, systemMessage, essayInfo, sectionType]);
+  };
 
   useEffect(() => {
-    if (isOpen && isInitialMount.current && llm) {
-      sendInitialMessage();
-      isInitialMount.current = false;
-    }
-  }, [isOpen, llm, sendInitialMessage]);
+    sendInitialMessage();
+  }, [isOpen]);
 
   const handleSend = async () => {
-    if (inputMessage.trim() === '' || !llm) return;
+    if (inputMessage.trim() === '' || isLoading) return;
 
     const userMessage = { role: 'user', content: inputMessage };
-    setMessages(prevMessages => [...prevMessages, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
+    setIsLoading(true);
 
     try {
-      const aiResponse = await llm.invoke([
+      const aiResponse = await llmService.invoke([
         systemMessage,
         ...messages,
         userMessage,
         { role: 'user', content: `Remember, I'm working on the ${sectionType} section of my essay.` }
       ]);
 
-      setMessages(prevMessages => [...prevMessages, { role: 'assistant', content: aiResponse.content }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: aiResponse.content }]);
     } catch (error) {
       console.error('Error calling Groq API:', error);
-      setMessages(prevMessages => [...prevMessages, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }]);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: 'Sorry, I encountered an error. Please try again.' 
+      }]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -158,6 +146,11 @@ const WritingAssistant = ({ isOpen, onClose, sectionType, essayInfo, currentCont
               </div>
             </div>
           ))}
+          {isLoading && (
+            <div className="text-center text-gray-500">
+              <p>Thinking...</p>
+            </div>
+          )}
         </div>
         <div className="p-4 border-t">
           <div className="flex items-center">
@@ -168,6 +161,7 @@ const WritingAssistant = ({ isOpen, onClose, sectionType, essayInfo, currentCont
               className="flex-grow px-3 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="Type your message..."
               rows="3"
+              disabled={isLoading}
             />
           </div>
         </div>

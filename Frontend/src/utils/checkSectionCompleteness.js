@@ -1,4 +1,5 @@
-import { ChatGroq } from "@langchain/groq";
+// essayAnalysis.js
+import { llmService } from './llmService';
 
 const evaluateCriteria = {
   introduction: `
@@ -27,13 +28,6 @@ const evaluateCriteria = {
 
 // Function to parse thesis statement and extract main points
 export const parseThesisPoints = async (thesisContent) => {
-  const llm = new ChatGroq({
-    apiKey: process.env.REACT_APP_GROQ_API_KEY,
-    model: "llama3-70b-8192",
-    temperature: 0,
-    maxTokens: 1024,
-  });
-
   const systemMessage = {
     role: 'system',
     content: `You are a JSON-only response analyzer. Analyze the thesis statement and extract main points for body paragraphs.
@@ -58,7 +52,7 @@ Rules:
   };
 
   try {
-    const response = await llm.invoke([
+    const response = await llmService.invoke([
       systemMessage,
       { role: 'user', content: `Extract main points from this thesis: "${thesisContent}"` }
     ]);
@@ -86,30 +80,12 @@ Rules:
 
       return parsedResponse;
     } catch (parseError) {
-      console.error('Failed to parse response:', jsonStr);
-      // Return a default structure
-      return {
-        mainPoints: [
-          {
-            point: "Main Argument",
-            keywords: [],
-            suggestedEvidence: []
-          }
-        ]
-      };
+      console.error('Failed to parse response:', parseError);
+      return getDefaultMainPoints();
     }
   } catch (error) {
     console.error('Error parsing thesis points:', error);
-    // Return a default structure instead of throwing
-    return {
-      mainPoints: [
-        {
-          point: "Main Argument",
-          keywords: [],
-          suggestedEvidence: []
-        }
-      ]
-    };
+    return getDefaultMainPoints();
   }
 };
 
@@ -129,30 +105,45 @@ export const generateBodySections = (mainPoints) => {
   }));
 };
 
+// Helper function for getting criteria based on section type
+const getCriteriaForSection = (sectionType) => {
+  const type = sectionType.toLowerCase();
+  if (type.includes('introduction')) return evaluateCriteria.introduction;
+  if (type.includes('body paragraph')) return evaluateCriteria.bodyParagraph;
+  if (type.includes('conclusion')) return evaluateCriteria.conclusion;
+  throw new Error('Invalid section type');
+};
+
+// Helper function for default main points
+const getDefaultMainPoints = () => ({
+  mainPoints: [
+    {
+      point: "Main Argument",
+      keywords: [],
+      suggestedEvidence: []
+    }
+  ]
+});
+
+// Helper function for default completion status
+const getDefaultCompletionStatus = (errorMessage = 'Analysis could not be completed') => ({
+  isComplete: false,
+  completionStatus: {
+    met: [],
+    missing: ['Please review the section requirements']
+  },
+  feedbackItems: [errorMessage],
+  suggestedImprovements: ['Please try analyzing the section again']
+});
+
 // Section completeness checker
 export const checkSectionCompleteness = async (content, sectionType, previousContent = null) => {
-  const llm = new ChatGroq({
-    apiKey: process.env.REACT_APP_GROQ_API_KEY,
-    model: "llama3-70b-8192",
-    temperature: 0,
-    maxTokens: 2048,
-  });
+  try {
+    const criteria = getCriteriaForSection(sectionType);
 
-  // Determine the section type and get appropriate criteria
-  let criteria;
-  if (sectionType.toLowerCase().includes('introduction')) {
-    criteria = evaluateCriteria.introduction;
-  } else if (sectionType.toLowerCase().includes('body paragraph')) {
-    criteria = evaluateCriteria.bodyParagraph;
-  } else if (sectionType.toLowerCase().includes('conclusion')) {
-    criteria = evaluateCriteria.conclusion;
-  } else {
-    throw new Error('Invalid section type');
-  }
-
-  const systemMessage = {
-    role: 'system',
-    content: `You are a JSON-only response analyzer. Evaluate the given ${sectionType} section against specific criteria.
+    const systemMessage = {
+      role: 'system',
+      content: `You are a JSON-only response analyzer. Evaluate the given ${sectionType} section against specific criteria.
 
 IMPORTANT: Return ONLY a valid JSON object with NO additional text, following this EXACT structure:
 {
@@ -174,10 +165,9 @@ Rules:
 3. All string values must be in double quotes
 4. Arrays can be empty but must be present
 5. NO comments or extra text allowed`
-  };
+    };
 
-  try {
-    const response = await llm.invoke([
+    const response = await llmService.invoke([
       systemMessage,
       {
         role: 'user',
@@ -187,66 +177,40 @@ Rules:
       }
     ]);
 
-    // Try to extract JSON if there's any extra text
     let jsonStr = response.content;
     if (jsonStr.includes('{')) {
       jsonStr = jsonStr.substring(jsonStr.indexOf('{'), jsonStr.lastIndexOf('}') + 1);
     }
 
-    try {
-      const parsedResponse = JSON.parse(jsonStr);
+    const parsedResponse = JSON.parse(jsonStr);
 
-      // Validate and normalize the response
-      const normalizedResponse = {
-        isComplete: false,
-        completionStatus: {
-          met: Array.isArray(parsedResponse?.completionStatus?.met) 
-            ? parsedResponse.completionStatus.met 
-            : [],
-          missing: Array.isArray(parsedResponse?.completionStatus?.missing) 
-            ? parsedResponse.completionStatus.missing 
-            : ['Requirements need to be reviewed']
-        },
-        feedbackItems: Array.isArray(parsedResponse?.feedbackItems) 
-          ? parsedResponse.feedbackItems 
+    // Normalize the response
+    const normalizedResponse = {
+      isComplete: false,
+      completionStatus: {
+        met: Array.isArray(parsedResponse?.completionStatus?.met) 
+          ? parsedResponse.completionStatus.met 
           : [],
-        suggestedImprovements: Array.isArray(parsedResponse?.suggestedImprovements) 
-          ? parsedResponse.suggestedImprovements 
-          : []
-      };
+        missing: Array.isArray(parsedResponse?.completionStatus?.missing) 
+          ? parsedResponse.completionStatus.missing 
+          : ['Requirements need to be reviewed']
+      },
+      feedbackItems: Array.isArray(parsedResponse?.feedbackItems) 
+        ? parsedResponse.feedbackItems 
+        : [],
+      suggestedImprovements: Array.isArray(parsedResponse?.suggestedImprovements) 
+        ? parsedResponse.suggestedImprovements 
+        : []
+    };
 
-      // Determine completion status
-      normalizedResponse.isComplete = 
-        Array.isArray(normalizedResponse.completionStatus.missing) && 
-        normalizedResponse.completionStatus.missing.length === 0;
+    normalizedResponse.isComplete = 
+      Array.isArray(normalizedResponse.completionStatus.missing) && 
+      normalizedResponse.completionStatus.missing.length === 0;
 
-      return normalizedResponse;
-
-    } catch (parseError) {
-      console.error('Failed to parse response:', jsonStr);
-      // Return a structured response for analysis failure
-      return {
-        isComplete: false,
-        completionStatus: {
-          met: [],
-          missing: ['Please review the section requirements']
-        },
-        feedbackItems: ['Analysis could not be completed'],
-        suggestedImprovements: ['Please try analyzing the section again']
-      };
-    }
+    return normalizedResponse;
 
   } catch (error) {
     console.error('Error during section analysis:', error);
-    // Return a fallback response
-    return {
-      isComplete: false,
-      completionStatus: {
-        met: [],
-        missing: ['Section analysis failed']
-      },
-      feedbackItems: ['Unable to complete analysis'],
-      suggestedImprovements: ['Please try again']
-    };
+    return getDefaultCompletionStatus(error.message);
   }
 };

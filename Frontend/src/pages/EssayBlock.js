@@ -11,7 +11,6 @@ import {
 import WritingAssistant from '../components/WritingAssistant';
 import { checkEssayErrors } from '../utils/essayChecker';
 import { checkSectionCompleteness, parseThesisPoints, generateBodySections } from '../utils/checkSectionCompleteness';
-import CompletionButton from '../components/CompletionButton';
 import EssayPreviewModal from '../components/EssayPreviewModal';
 import SectionPreview from '../components/SectionPreview';
 import { CompletionRequirementsModal } from '../components/CompletionRequirementsModal';

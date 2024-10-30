@@ -1,4 +1,5 @@
-import { ChatGroq } from "@langchain/groq";
+// essayChecker.js
+import { llmService } from "./llmService";
 
 const ERROR_CATEGORIES = {
   spelling: [
@@ -42,13 +43,6 @@ const ERROR_CATEGORIES = {
 
 export const checkEssayErrors = async (content) => {
   try {
-    const llm = new ChatGroq({
-      apiKey: process.env.REACT_APP_GROQ_API_KEY,
-      model: "llama3-70b-8192",
-      temperature: 0,
-      maxTokens: 2048,
-    });
-
     const systemMessage = {
       role: 'system',
       content: `You are an advanced essay error detection system. Analyze the text and identify ALL errors without any limit, returning them ONLY as a JSON array. Check for these specific error types:
@@ -159,14 +153,14 @@ export const checkEssayErrors = async (content) => {
     JSON:
     `
     };
-    
 
     const userMessage = {
       role: 'user',
       content: `Analyze this text for ALL errors and return ONLY a JSON array. Find every single error: "${content}"`
     };
 
-    const aiResponse = await llm.invoke([systemMessage, userMessage]);
+    // Use llmService to invoke the AI
+    const aiResponse = await llmService.invoke([systemMessage, userMessage]);
     
     // Parse response
     let errors = [];
@@ -190,7 +184,7 @@ export const checkEssayErrors = async (content) => {
       errors = [];
     }
 
-    // Validate and categorize errors - now without limits
+    // Validate and categorize errors
     const categorizedErrors = Object.keys(ERROR_CATEGORIES).reduce((acc, category) => {
       acc[category] = errors
         .filter(error => error.category === category)

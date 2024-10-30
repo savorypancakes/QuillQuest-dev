@@ -1,10 +1,8 @@
-// backend/controllers/authController.js
-
+// controllers/authController.js
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-// Helper function to generate JWT
 const generateToken = (user) => {
   return jwt.sign(
     { id: user._id, username: user.username },
@@ -13,9 +11,6 @@ const generateToken = (user) => {
   );
 };
 
-// @desc    Register a new user
-// @route   POST /api/auth/register
-// @access  Public
 exports.register = async (req, res, next) => {
   const { username, email, password } = req.body;
   try {
@@ -50,28 +45,21 @@ exports.register = async (req, res, next) => {
   }
 };
 
-// @desc    Login user and return JWT
-// @route   POST /api/auth/login
-// @access  Public
 exports.login = async (req, res, next) => {
   const { email, password } = req.body;
   try {
     // Find user
     const user = await User.findOne({ email });
     if (!user) {
-      console.log('No user found with provided email:', email); // Log if no user found
       return res.status(400).json({ message: 'Incorrect email or password.' });
     }
-    console.log('User found for login:', user.email); // Log the email of the found user
+
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      console.log('Password does not match for user:', user.email); // Log if password comparison fails
-      console.log(user.password);
-      console.log(password);
       return res.status(400).json({ message: 'Incorrect email or password.' });
     }
-    console.log('Password matches for user:', user.email); // Log if password comparison succeeds
+
     // Generate token
     const token = generateToken(user);
 
