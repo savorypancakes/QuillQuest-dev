@@ -4,7 +4,6 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
-import CreatePost from './pages/CreatePost';
 import PostDetail from './pages/PostDetail';
 import './assets/css/App.css';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -37,7 +36,6 @@ function App() {
           <Route path="/essayreview" element={<ProtectedRoute><EssayReview /></ProtectedRoute>} />
           <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path='/profile' element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path='/createpost' element={<ProtectedRoute><CreatePost /></ProtectedRoute>} />
           <Route path='/posts/:id' element={<ProtectedRoute><PostDetail /></ProtectedRoute>} />
         </Routes>
       </div>
