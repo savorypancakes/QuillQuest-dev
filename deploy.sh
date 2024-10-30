@@ -8,14 +8,21 @@ npm install
 
 # Build frontend
 echo "🏗️ Building frontend..."
-npm run build-client
+cd Frontend
+npm install
+npm run build
+cd ..
+
+# Ensure backend build directory exists
+echo "📁 Creating build directory..."
+mkdir -p Backend/build
 
 # Copy frontend build to backend
-echo "📋 Copying frontend build to Backend..."
-npm run copy-build
+echo "📋 Copying frontend build to backend..."
+cp -r Frontend/build/* Backend/build/
 
 # Install production dependencies in backend
-echo "📦 Installing Backend dependencies..."
+echo "📦 Installing backend dependencies..."
 cd Backend
 npm install --production
 cd ..

@@ -1,5 +1,6 @@
-// backend/app.js
+// Backend/app.js
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const dotenv = require('dotenv');
 
@@ -16,10 +17,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Middleware
+// Parse JSON bodies
 app.use(express.json());
 
-// Add request logging middleware
+// Request logging
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
@@ -35,10 +36,29 @@ const replyRoutes = require('./routes/replies');
 const notificationRoutes = require('./routes/notifications');
 const resetPasswordRoute = require('./routes/resetPassword');
 
-// Config route for frontend
-const configRoute = express.Router();
-configRoute.get('/', (req, res) => {
-  // Only expose necessary configuration
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, 'build'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    } else if (filePath.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    }
+  }
+}));
+
+// API routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/comments', commentRoutes);
+app.use('/api/prompts', promptRoutes);
+app.use('/api/replies', replyRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/auth/reset-password', resetPasswordRoute);
+
+// Config route
+app.get('/api/config', (req, res) => {
   res.json({
     GROQ_API_KEY: process.env.REACT_APP_GROQ_API_KEY,
     API_VERSION: '1.0',
@@ -46,96 +66,29 @@ configRoute.get('/', (req, res) => {
   });
 });
 
-// Debug middleware for prompts route
-app.use('/api/prompts', (req, res, next) => {
-  console.log('Prompts route accessed:', {
-    method: req.method,
-    path: req.path,
-    query: req.query,
-    body: req.body
-  });
-  next();
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Mount routes
-app.use('/api/auth', authRoutes);
-app.use('/api/auth/reset-password', resetPasswordRoute);
-app.use('/api/users', userRoutes);
-app.use('/api/posts', postRoutes);
-app.use('/api/comments', commentRoutes);
-app.use('/api/prompts', promptRoutes);
-app.use('/api/replies', replyRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/config', configRoute);
-
-// Add a test route
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Test route working' });
+// Serve React's index.html for all other routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
-// Options handling for CORS preflight
-app.options('*', cors());
-
-// 404 handler - Add this before error handler
-app.use((req, res, next) => {
-  console.log(`404 - Not Found: ${req.method} ${req.path}`);
-  res.status(404).json({ 
-    message: 'Route not found',
-    requestedPath: req.path,
-    method: req.method,
-    availableRoutes: {
-      auth: [
-        { method: 'POST', path: '/api/auth/login' },
-        { method: 'POST', path: '/api/auth/register' }
-      ],
-      users: [
-        { method: 'GET', path: '/api/users/profile' },
-        { method: 'PUT', path: '/api/users/profile' }
-      ],
-      // Add other available routes here
-    }
-  });
-});
-
-// Global Error Handling Middleware
+// Error handling
 app.use((err, req, res, next) => {
   console.error('Global error handler:', {
     error: err.message,
     stack: err.stack,
     path: req.path,
-    method: req.method,
-    body: req.body,
-    query: req.query,
-    params: req.params
+    method: req.method
   });
   
-  // Determine status code
-  const statusCode = err.statusCode || 500;
-  
-  res.status(statusCode).json({ 
+  res.status(500).json({ 
     message: 'Server Error', 
-    error: process.env.NODE_ENV === 'production' ? '🥞' : err.message,
-    stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack,
-    // Additional debug info in development
-    ...(process.env.NODE_ENV !== 'production' && {
-      path: req.path,
-      method: req.method,
-      timestamp: new Date().toISOString()
-    })
+    error: process.env.NODE_ENV === 'production' ? '🥞' : err.message
   });
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-  // Optionally implement notification system for critical errors
-  process.exit(1);
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  // Optionally implement notification system for critical errors
 });
 
 module.exports = app;
